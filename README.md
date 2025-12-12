@@ -32,7 +32,7 @@
         <li><a href="#development">Development Timeline</a></li>
         <li><a href="#tech-stack">Tech Stack</a></li>
         <li><a href="#roadmap">Roadmap</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#installation">Installation</a></l         i>
         <li><a href="#license">License</a></li>
     </ol>
 </details>
