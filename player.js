@@ -6,7 +6,7 @@ class Player {
         this.x = x;
         this.y = y;
         this.width = 32;
-        this.height = 32;
+        this.height = 48;  // match sprite height
         this.speed = 200; // pixels per second
         this.velocityX = 0;
         this.velocityY = 0;
@@ -86,10 +86,10 @@ class Player {
             }
             // Apply dash velocity
             this.x += this.dashDirection.x * this.dashSpeed * dt;
-            this.y += this.dashDirection.y * this.dashSpeed * dt;
+                this.y += this.dashDirection.y * this.dashSpeed * dt;  // weird indent but it works lol
         } else {
             // Normal movement
-            this.x += this.velocityX * dt;
+              this.x += this.velocityX * dt;
             this.y += this.velocityY * dt;
         }
 
@@ -247,6 +247,7 @@ class Player {
         this.velocityY = y * this.speed;
 
         // Update facing direction
+        // note: might wanna make this smoother later? idk feels kinda choppy
         if (x > 0) this.facing = 'right';
         else if (x < 0) this.facing = 'left';
         else if (y > 0) this.facing = 'down';
