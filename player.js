@@ -52,8 +52,9 @@ class Player {
             amulet: null
         };
 
-        // Inventory
-        this.inventory = [];
+        // Inventory - hotbar style (9 slots)
+        this.inventory = new Array(9).fill(null);
+        this.selectedSlot = 0;
         this.gold = 0;
 
         // Animation
@@ -207,5 +208,29 @@ class Player {
             return true;
         }
         return false;
+    }
+
+    // Add item to inventory
+    addItem(item) {
+        // find first empty slot
+        for (let i = 0; i < this.inventory.length; i++) {
+            if (this.inventory[i] === null) {
+                this.inventory[i] = item;
+                console.log(`Added ${item.name} to inventory slot ${i}`);
+                return true;
+            }
+        }
+        console.log('Inventory full!');
+        return false;
+    }
+
+    // Remove item from slot
+    removeItem(slotIndex) {
+        if (slotIndex >= 0 && slotIndex < this.inventory.length) {
+            const item = this.inventory[slotIndex];
+            this.inventory[slotIndex] = null;
+              return item;
+        }
+        return null;
     }
 }
