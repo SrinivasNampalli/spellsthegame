@@ -13,7 +13,7 @@ class Player {
 
         // Dash/dodge mechanics
         this.dashSpeed = 450;
-        this.dashDuration = 180; // milliseconds
+        this.dashDuration = 180;
         this.dashCooldown = 800;
         this.isDashing = false;
         this.canDash = true;
@@ -41,12 +41,8 @@ class Player {
         this.invulnerabilityTimer = 0;
 
         // Spell system
-        this.equippedSpells = [null, null, null, null]; // 4 spell slots
+        this.equippedSpells = [null, null, null, null];
         this.spellCooldowns = [0, 0, 0, 0];
-        this.unlockedElements = ['fire', 'water', 'earth', 'air'];
-        this.spellComboMultiplier = 1.0;
-        this.lastSpellCast = null;
-        this.comboTimer = 0;
 
         // Equipment
         this.equipment = {
@@ -60,50 +56,41 @@ class Player {
         this.gold = 0;
 
         // Animation
-        this.facing = 'down'; // down, up, left, right
+        this.facing = 'down';
         this.isMoving = false;
-        this.animationFrame = 0;
-        this.animationTimer = 0;
-        this.animationSpeed = 100; // milliseconds per frame
-
-        // Status effects
-        this.statusEffects = [];
 
         // Interaction
         this.interactionRange = 50;
     }
 
-    // TODO: Implement update method for player state
     update(deltaTime) {
-        const dt = deltaTime / 1000; // Convert to seconds
+        const dt = deltaTime / 1000;
 
-        // Update dash timer
+        // dashing
         if (this.isDashing) {
             this.dashTimer += deltaTime;
             if (this.dashTimer >= this.dashDuration) {
                 this.isDashing = false;
                 this.dashTimer = 0;
             }
-            // Apply dash velocity
             this.x += this.dashDirection.x * this.dashSpeed * dt;
                 this.y += this.dashDirection.y * this.dashSpeed * dt;  // weird indent but it works lol
         } else {
-            // Normal movement
               this.x += this.velocityX * dt;
             this.y += this.velocityY * dt;
         }
 
-        // Update dash cooldown
+        // dash cooldown
         if (!this.canDash && Date.now() - this.lastDashTime >= this.dashCooldown) {
             this.canDash = true;
         }
 
-        // Mana regeneration
+        // mana regen
         if (this.mana < this.maxMana) {
             this.mana = Math.min(this.maxMana, this.mana + this.manaRegen * dt);
         }
 
-        // Update invulnerability timer
+        // invuln timer
         if (this.isInvulnerable) {
             this.invulnerabilityTimer += deltaTime;
             if (this.invulnerabilityTimer >= this.invulnerabilityDuration) {
@@ -112,31 +99,18 @@ class Player {
             }
         }
 
-        // Update spell cooldowns
+        // spell cooldowns
         for (let i = 0; i < this.spellCooldowns.length; i++) {
             if (this.spellCooldowns[i] > 0) {
                 this.spellCooldowns[i] -= deltaTime;
             }
         }
-
-        // Update combo timer
-        if (this.comboTimer > 0) {
-            this.comboTimer -= deltaTime;
-            if (this.comboTimer <= 0) {
-                this.spellComboMultiplier = 1.0;
-                this.lastSpellCast = null;
-            }
-        }
-
-        // TODO: Update status effects
-        // TODO: Update animation state
     }
 
-    // Dash ability - needs collision detection
+    // Dash ability
     dash(directionX, directionY) {
         if (!this.canDash || this.isDashing) return false;
 
-        // Normalize direction
         const magnitude = Math.sqrt(directionX * directionX + directionY * directionY);
         if (magnitude === 0) return false;
 
@@ -159,32 +133,11 @@ class Player {
         const spell = this.equippedSpells[slotIndex];
         if (!spell) return null;
 
-        // Check cooldown
         if (this.spellCooldowns[slotIndex] > 0) {
-            console.log(`Spell on cooldown: ${this.spellCooldowns[slotIndex]}ms remaining`);
             return null;
         }
 
-        // TODO: Check mana cost
-        // if (this.mana < spell.manaCost) {
-        //     return null;
-        // }
-
-        // Apply combo multiplier logic
-        if (this.lastSpellCast && this.lastSpellCast !== spell.element) {
-            this.spellComboMultiplier = Math.min(2.0, this.spellComboMultiplier + 0.25);
-        }
-
-        this.lastSpellCast = spell.element;
-        this.comboTimer = 3000; // 3 second window for combos
-
-        // TODO: Deduct mana
-        // this.mana -= spell.manaCost;
-
-        // Set cooldown
-        // this.spellCooldowns[slotIndex] = spell.cooldown;
-
-        // TODO: Return spell projectile/effect
+        // TODO: actually cast the spell lol
         return null;
     }
 
@@ -232,26 +185,25 @@ class Player {
         // Increase stats
         this.maxHealth += 10;
         this.health = this.maxHealth;
-        this.maxMana += 10;
+          this.maxMana += 10;
         this.mana = this.maxMana;
         this.damage += 2;
         this.defense += 1;
 
         console.log(`Level up! Now level ${this.level}`);
-        // TODO: Trigger level up UI/effects
     }
 
     // Movement methods
     setVelocity(x, y) {
         this.velocityX = x * this.speed;
-        this.velocityY = y * this.speed;
+          this.velocityY = y * this.speed;
 
         // Update facing direction
         // note: might wanna make this smoother later? idk feels kinda choppy
         if (x > 0) this.facing = 'right';
         else if (x < 0) this.facing = 'left';
         else if (y > 0) this.facing = 'down';
-        else if (y < 0) this.facing = 'up';
+          else if (y < 0) this.facing = 'up';
 
         this.isMoving = (x !== 0 || y !== 0);
     }
@@ -259,10 +211,7 @@ class Player {
     // Death handler
     onDeath() {
         console.log('Player died!');
-        // TODO: Implement death logic
-        // - Drop items?
-        // - Respawn at checkpoint?
-        // - Game over screen?
+        // TODO: death screen, respawn, etc
     }
 
     // Equip spell to slot
@@ -273,7 +222,4 @@ class Player {
         }
         return false;
     }
-
-    // TODO: Draw method for rendering
-    // draw(ctx) { }
 }
