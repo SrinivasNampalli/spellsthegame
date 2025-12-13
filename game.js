@@ -55,7 +55,10 @@ const game = {
     interactableNearby: null,
     dialogueActive: false,
     currentDialogueIndex: 0,
-    currentNPC: null
+    currentNPC: null,
+    // camera offset for future scrolling
+    cameraX: 0,
+      cameraY: 0
 };
 
 // Keyboard state
@@ -64,7 +67,6 @@ const keys = {
     a: false,
     s: false,
     d: false,
-    space: false,
       e: false
 };
 
@@ -99,12 +101,21 @@ class NPC {
             ctx.fillRect(this.x + 10, this.y + 22, 12, 3);
         }
 
-        // name tag
+        // draw name tag above NPC
+        this.drawNameTag(ctx);
+    }
+
+    drawNameTag(ctx) {
+        const tagWidth = this.width + 20;
+        const tagHeight = 16;
+        const tagX = this.x - 10;
+        const tagY = this.y - 20;
+
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(this.x - 10, this.y - 20, this.width + 20, 16);
+        ctx.fillRect(tagX, tagY, tagWidth, tagHeight);
         ctx.fillStyle = '#ffcc00';
         ctx.font = '10px monospace';
-        ctx.textAlign = 'center';
+          ctx.textAlign = 'center';
         ctx.fillText(this.name, this.x + this.width / 2, this.y - 8);
     }
 
@@ -126,9 +137,23 @@ class NPC {
 function init() {
     loadSprites();
 
-    game.player = new Player(canvas.width / 2, canvas.height / 2);
+    // spawn player in center
+    const startX = canvas.width / 2;
+    const startY = canvas.height / 2;
+    game.player = new Player(startX, startY);
 
     // Create NPCs
+    createNPCs();
+
+    // keyboard stuff
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Create all NPCs in the game
+function createNPCs() {
     game.npcs.push(new NPC(200, 150, 'Elder Mage', [
         "Welcome, young apprentice! I am the Elder Mage of this realm.",
         "You must master the elements to succeed in your quest.",
@@ -149,12 +174,6 @@ function init() {
         "Sometimes the greatest power comes from balance.",
         "Seek the ancient temple in the Volcanic Peaks..."
     ], '#ff4444'));
-
-    // keyboard stuff
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-
-    requestAnimationFrame(gameLoop);
 }
 
 // Keyboard handlers
@@ -164,9 +183,10 @@ function handleKeyDown(e) {
         if (key === 'e' && !keys.e) {
             handleInteraction();
         }
-        if (key === ' ' && !keys.space) {
-            handleDash();
-        }
+        // TODO: re-add dash functionality later - removing for now since it's buggy
+        // if (key === ' ' && !keys.space) {
+        //     handleDash();
+        // }
         keys[key] = true;
           e.preventDefault();
     }
@@ -177,24 +197,6 @@ function handleKeyUp(e) {
     if (key in keys) {
         keys[key] = false;
         e.preventDefault();
-    }
-}
-
-// Handle dash
-function handleDash() {
-    if (game.dialogueActive) return;
-
-    let dirX = 0;
-    let dirY = 0;
-
-    if (keys.w) dirY -= 1;
-    if (keys.s) dirY += 1;
-    if (keys.a) dirX -= 1;
-    if (keys.d) dirX += 1;
-
-    // only dash if moving
-    if (dirX !== 0 || dirY !== 0) {
-        game.player.dash(dirX, dirY);
     }
 }
 
@@ -374,18 +376,6 @@ function drawPlayer(ctx, player) {
         ctx.strokeStyle = '#ff0000';
         ctx.lineWidth = 2;
         ctx.strokeRect(player.x - 2, player.y - 2, player.width + 4, player.height + 4);
-    }
-
-    // dash cooldown bar
-    if (!player.canDash) {
-        const barY = player.y - 5;
-        const barWidth = player.width;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.fillRect(player.x, barY, barWidth, 3);
-        const cooldownProgress = (Date.now() - player.lastDashTime) / player.dashCooldown;
-          const progressWidth = barWidth * cooldownProgress;
-        ctx.fillStyle = '#00ffff';
-        ctx.fillRect(player.x, barY, progressWidth, 3);
     }
 }
 

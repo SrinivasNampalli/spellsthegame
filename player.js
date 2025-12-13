@@ -11,15 +11,16 @@ class Player {
         this.velocityX = 0;
         this.velocityY = 0;
 
-        // Dash/dodge mechanics
-        this.dashSpeed = 450;
-        this.dashDuration = 180;
-        this.dashCooldown = 800;
+        // Dash/dodge mechanics - DISABLED for now (buggy collision detection)
+        // TODO: fix dash mechanics and re-enable
+        // this.dashSpeed = 450;
+        // this.dashDuration = 180;
+        // this.dashCooldown = 800;
         this.isDashing = false;
-        this.canDash = true;
-        this.dashTimer = 0;
-        this.lastDashTime = 0;
-        this.dashDirection = { x: 0, y: 0 };
+        // this.canDash = true;
+        // this.dashTimer = 0;
+        // this.lastDashTime = 0;
+        // this.dashDirection = { x: 0, y: 0 };
 
         // Stats
         this.maxHealth = 100;
@@ -66,24 +67,9 @@ class Player {
     update(deltaTime) {
         const dt = deltaTime / 1000;
 
-        // dashing
-        if (this.isDashing) {
-            this.dashTimer += deltaTime;
-            if (this.dashTimer >= this.dashDuration) {
-                this.isDashing = false;
-                this.dashTimer = 0;
-            }
-            this.x += this.dashDirection.x * this.dashSpeed * dt;
-                this.y += this.dashDirection.y * this.dashSpeed * dt;  // weird indent but it works lol
-        } else {
-              this.x += this.velocityX * dt;
-            this.y += this.velocityY * dt;
-        }
-
-        // dash cooldown
-        if (!this.canDash && Date.now() - this.lastDashTime >= this.dashCooldown) {
-            this.canDash = true;
-        }
+        // Movement update
+          this.x += this.velocityX * dt;
+        this.y += this.velocityY * dt;
 
         // mana regen
         if (this.mana < this.maxMana) {
@@ -107,22 +93,22 @@ class Player {
         }
     }
 
-    // Dash ability
-    dash(directionX, directionY) {
-        if (!this.canDash || this.isDashing) return false;
+    // Dash ability - COMMENTED OUT (needs fixing)
+    // dash(directionX, directionY) {
+    //     if (!this.canDash || this.isDashing) return false;
 
-        const magnitude = Math.sqrt(directionX * directionX + directionY * directionY);
-        if (magnitude === 0) return false;
+    //     const magnitude = Math.sqrt(directionX * directionX + directionY * directionY);
+    //     if (magnitude === 0) return false;
 
-        this.dashDirection.x = directionX / magnitude;
-        this.dashDirection.y = directionY / magnitude;
+    //     this.dashDirection.x = directionX / magnitude;
+    //     this.dashDirection.y = directionY / magnitude;
 
-        this.isDashing = true;
-        this.canDash = false;
-        this.lastDashTime = Date.now();
+    //     this.isDashing = true;
+    //     this.canDash = false;
+    //     this.lastDashTime = Date.now();
 
-        return true;
-    }
+    //     return true;
+    // }
 
     // Cast spell from equipped slot
     castSpell(slotIndex) {
