@@ -5,9 +5,9 @@ class Player {
         // Position and movement
         this.x = x;
         this.y = y;
-        this.width = 32;
-        this.height = 48;  // match sprite height
-        this.speed = 200; // pixels per second
+        this.width = 48;  // Increased from 32
+        this.height = 72;  // Increased from 48 (1.5x larger)
+        this.speed = 250; // pixels per second (slightly faster for larger size)
         this.velocityX = 0;
         this.velocityY = 0;
 
@@ -60,6 +60,7 @@ class Player {
         // Animation
         this.facing = 'down';
         this.isMoving = false;
+        this.animTime = 0;
 
         // Interaction
         this.interactionRange = 50;
@@ -71,6 +72,9 @@ class Player {
         // Movement update
           this.x += this.velocityX * dt;
         this.y += this.velocityY * dt;
+
+        // Animation timer
+        this.animTime += dt * (this.isMoving ? 1 : 0.5);
 
         // mana regen
         if (this.mana < this.maxMana) {
@@ -187,10 +191,19 @@ class Player {
 
         // Update facing direction
         // note: might wanna make this smoother later? idk feels kinda choppy
-        if (x > 0) this.facing = 'right';
-        else if (x < 0) this.facing = 'left';
-        else if (y > 0) this.facing = 'down';
-          else if (y < 0) this.facing = 'up';
+        const ax = Math.abs(x);
+        const ay = Math.abs(y);
+        if (ay >= ax) {
+            if (y > 0) this.facing = 'down';
+            else if (y < 0) this.facing = 'up';
+            else if (x > 0) this.facing = 'right';
+            else if (x < 0) this.facing = 'left';
+        } else {
+            if (x > 0) this.facing = 'right';
+            else if (x < 0) this.facing = 'left';
+            else if (y > 0) this.facing = 'down';
+            else if (y < 0) this.facing = 'up';
+        }
 
         this.isMoving = (x !== 0 || y !== 0);
     }
@@ -210,16 +223,44 @@ class Player {
         return false;
     }
 
-    // Add item to inventory
+    // Add item to inventory (with stacking support)
     addItem(item) {
-        // find first empty slot
+        const maxStack = item.maxStack || 1;
+        const itemCount = item.count || 1;
+
+        // First, try to stack with existing items
+        if (maxStack > 1) {
+            for (let i = 0; i < this.inventory.length; i++) {
+                const slotItem = this.inventory[i];
+                if (slotItem && slotItem.id === item.id) {
+                    const currentCount = slotItem.count || 1;
+                    const spaceLeft = maxStack - currentCount;
+
+                    if (spaceLeft > 0) {
+                        const amountToAdd = Math.min(spaceLeft, itemCount);
+                        slotItem.count = currentCount + amountToAdd;
+
+                        if (amountToAdd >= itemCount) {
+                            console.log(`Stacked ${item.name} (now ${slotItem.count})`);
+                            return true;
+                        } else {
+                            // Partially stacked, continue with remaining
+                            item.count = itemCount - amountToAdd;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If not fully stacked, find an empty slot
         for (let i = 0; i < this.inventory.length; i++) {
             if (this.inventory[i] === null) {
-                this.inventory[i] = item;
+                this.inventory[i] = {...item, count: item.count || 1};
                 console.log(`Added ${item.name} to inventory slot ${i}`);
                 return true;
             }
         }
+
         console.log('Inventory full!');
         return false;
     }
