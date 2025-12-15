@@ -1,6 +1,6 @@
 // Player.js - Core player character class for Spells the Adventure
 
-class Player {
+export class Player {
     constructor(x, y) {
         // Position and movement
         this.x = x;
@@ -169,19 +169,28 @@ class Player {
 
     // Level up
     levelUp() {
+        const gain = { hp: 10, mana: 10, damage: 2, defense: 1 };
+
         this.level++;
         this.experience -= this.experienceToNextLevel;
         this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.5);
 
         // Increase stats
-        this.maxHealth += 10;
+        this.maxHealth += gain.hp;
         this.health = this.maxHealth;
-          this.maxMana += 10;
+          this.maxMana += gain.mana;
         this.mana = this.maxMana;
-        this.damage += 2;
-        this.defense += 1;
+        this.damage += gain.damage;
+        this.defense += gain.defense;
 
         console.log(`Level up! Now level ${this.level}`);
+        try {
+            if (typeof window !== 'undefined' && window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('player-level-up', { detail: { level: this.level, gain } }));
+            }
+        } catch (_) {
+            // ignore
+        }
     }
 
     // Movement methods
@@ -274,4 +283,11 @@ class Player {
         }
         return null;
     }
+}
+
+// Optional global for debugging in console
+try {
+    window.Player = Player;
+} catch (_) {
+    // ignore
 }
