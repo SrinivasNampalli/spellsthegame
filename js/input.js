@@ -1,4 +1,4 @@
-import { canvas, game, keys } from './context.js';
+import { canvas, game, keys, dom } from './context.js';
 import { items } from './data.js';
 import { saveGameState } from './persistence.js';
 import { showDialogue, hideDialogue } from './ui.js';
@@ -14,6 +14,9 @@ import {
   handleDoubleClick,
   handleMouseWheel,
 } from './crafting.js';
+import { castSelectedSpellAt } from './spells.js';
+import { spawnTrainingDroids, spawnWaterMinions } from './combat.js';
+import { handleRunicInput, handleMemoryInput } from './libraryActivities.js';
 
 export function updateEquippedWeapon() {
   const selectedItem = game.player.inventory[game.player.selectedSlot];
@@ -29,7 +32,7 @@ export function useSelectedItem() {
 
   // Handle spell casting
   if (item.type === 'spell') {
-    castSpell(item);
+    castSelectedSpellAt(game.mouseX - (game.shakeX || 0), game.mouseY - (game.shakeY || 0));
     return;
   }
 
@@ -43,47 +46,6 @@ export function useSelectedItem() {
 
   item.count = (item.count || 1) - 1;
   if (item.count <= 0) game.player.inventory[slot] = null;
-  saveGameState();
-}
-
-function castSpell(spell) {
-  // Check mana cost
-  const manaCost = spell.manaCost || 0;
-  if (game.player.mana < manaCost) {
-    console.log('Not enough mana!');
-    return;
-  }
-
-  // Consume mana
-  game.player.mana -= manaCost;
-
-  // Determine direction based on last movement or default to right
-  let dirX = 1;
-  let dirY = 0;
-  if (keys.w) { dirY = -1; dirX = 0; }
-  else if (keys.s) { dirY = 1; dirX = 0; }
-  else if (keys.a) { dirX = -1; dirY = 0; }
-  else if (keys.d) { dirX = 1; dirY = 0; }
-
-  // Create projectile
-  const projectile = {
-    x: game.player.x + game.player.width / 2,
-    y: game.player.y + game.player.height / 2,
-    vx: dirX * 300, // pixels per second
-    vy: dirY * 300,
-    damage: spell.damage || 10,
-    size: 16,
-    color: spell.color || '#ff6600',
-    icon: spell.icon,
-    sprite: spell.sprite,
-    lifetime: 2000, // 2 seconds
-    age: 0,
-    type: spell.id || 'fire_spell',
-    owner: 'player' // Mark as player projectile
-  };
-
-  game.projectiles.push(projectile);
-  console.log('Cast spell:', spell.name);
   saveGameState();
 }
 
@@ -118,6 +80,16 @@ export function tryRespawn() {
 export function handleInteraction() {
   if (game.dialogueActive) {
     if (!game.currentNPC) return;
+
+    // If typing is not complete, skip to end
+    if (!game.dialogueTypingComplete) {
+      game.dialogueTypingIndex = game.dialogueFullText.length;
+      game.dialogueVisibleText = game.dialogueFullText;
+      game.dialogueTypingComplete = true;
+      if (dom.dialogueTextEl) dom.dialogueTextEl.textContent = game.dialogueFullText;
+      return;
+    }
+
     const questTurnIn = tryCompleteQuest(game.currentNPC);
     const nextDialogue = questTurnIn || game.currentNPC.getNextDialogue();
     showDialogue(game.currentNPC.name, nextDialogue);
@@ -151,6 +123,17 @@ export function handleInteraction() {
 
     // Teleport if dialogue looped back
     if (game.currentNPC.dialogueIndex === 0) {
+      // Archive Keeper spawns Training Droids when dialogue completes
+      if (game.currentNPC.name === 'Archive Keeper' && !game.trialActive) {
+        spawnTrainingDroids();
+      }
+
+      // Water Queen spawns minions on first interaction complete
+      if (game.currentNPC.name === 'Water Queen' && !game.currentNPC._minionsSpawned) {
+        spawnWaterMinions();
+        game.currentNPC._minionsSpawned = true;
+      }
+
       if (game.currentNPC.teleportTo) startTransition(game.currentNPC.teleportTo);
       hideDialogue();
     }
@@ -159,6 +142,19 @@ export function handleInteraction() {
 
   if (game.interactableNearby) {
     game.currentNPC = game.interactableNearby;
+
+    // Trigger onFirstMeet callback if it exists and hasn't been called
+    if (game.currentNPC.onFirstMeet && !game.currentNPC._firstMeetTriggered) {
+      game.currentNPC.onFirstMeet();
+      game.currentNPC._firstMeetTriggered = true;
+    }
+
+    // Use custom dialogue handler if available
+    if (game.currentNPC.customDialogueHandler) {
+      game.currentNPC.customDialogueHandler();
+      return;
+    }
+
     const questTurnIn = tryCompleteQuest(game.currentNPC);
     const dialogue = questTurnIn || game.currentNPC.getNextDialogue();
     showDialogue(game.currentNPC.name, dialogue);
@@ -174,6 +170,15 @@ export function bindInput() {
   document.addEventListener('keydown', handleKeyDown);
   document.addEventListener('keyup', handleKeyUp);
 
+  // Casting spells uses left-click when not in a UI modal.
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    if (game.craftingOpen || game.guideOpen) return;
+    if (game.dialogueActive || game.transitioning) return;
+    const didCast = castSelectedSpellAt(game.mouseX - (game.shakeX || 0), game.mouseY - (game.shakeY || 0));
+    if (didCast) e.preventDefault();
+  });
+
   canvas.addEventListener('mousedown', handleMouseDown);
   canvas.addEventListener('mouseup', handleMouseUp);
   canvas.addEventListener('mousemove', (e) => {
@@ -187,6 +192,42 @@ export function bindInput() {
 function handleKeyDown(e) {
   const key = e.key.toLowerCase();
   if (!(key in keys)) return;
+
+  // Handle mini-game inputs
+  if (key >= '1' && key <= '9') {
+    const keyNumber = parseInt(key, 10);
+
+    // Runic puzzle input
+    if (game.runicPuzzleInputMode) {
+      if (handleRunicInput(keyNumber)) {
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // Memory game input
+    if (game.memoryGameInputMode) {
+      if (handleMemoryInput(keyNumber)) {
+        e.preventDefault();
+        return;
+      }
+    }
+  }
+
+  // Handle dialogue choice selection with number keys
+  if (game.dialogueActive && game.dialogueHasChoices && game.dialogueTypingComplete) {
+    if (key >= '1' && key <= '9') {
+      const choiceIndex = parseInt(key, 10) - 1;
+      if (choiceIndex < game.dialogueChoices.length) {
+        const choice = game.dialogueChoices[choiceIndex];
+        // Trigger choice callback from UI
+        const choiceEl = dom.dialogueChoicesEl?.children[choiceIndex];
+        if (choiceEl) choiceEl.click();
+        e.preventDefault();
+        return;
+      }
+    }
+  }
 
   if (key === 'e' && !keys.e) handleInteraction();
   if (key === 'c' && !keys.c) toggleCrafting();
@@ -212,4 +253,3 @@ function handleKeyUp(e) {
   keys[key] = false;
   e.preventDefault();
 }
-

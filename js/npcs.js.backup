@@ -201,6 +201,208 @@ export function createNPCs() {
 
   // Water Queen access gate (unlocked after Library trial)
   const tideGate = new NPC(
+
+    if (this._dialoguePhase === 0) {
+      // Initial greeting
+      showDialogue(this.name,
+        'Welcome to the Great Library, young one. I am the Archive Keeper. These halls contain the sum of all knowledge... crafting, magic, and forbidden secrets.',
+        [
+          {
+            text: 'I seek knowledge to protect others.',
+            nextDialogue: 'Ah, the noble path. Admirable... but is nobility enough when darkness rises?',
+            nextChoices: [
+              {
+                text: 'Strength comes from conviction.',
+                callback: () => {
+                  this._pathChosen = 'noble';
+                  this._dialoguePhase = 1;
+                },
+                nextDialogue: 'Conviction without skill is merely stubborn suicide. Let me teach you to survive first...'
+              },
+              {
+                text: 'Show me how to fight.',
+                callback: () => {
+                  this._pathChosen = 'pragmatic';
+                  this._dialoguePhase = 1;
+                },
+                nextDialogue: 'Pragmatic. Good. Dead heroes save no one. Let me teach you the fundamentals...'
+              }
+            ]
+          },
+          {
+            text: 'I seek power for myself.',
+            nextDialogue: 'Honest, at least. Power without wisdom destroys its wielder... but perhaps you can learn.',
+            nextChoices: [
+              {
+                text: 'I will master whatever you teach.',
+                callback: () => {
+                  this._pathChosen = 'ambitious';
+                  this._dialoguePhase = 1;
+                },
+                nextDialogue: 'Ambition. A double-edged blade. Very well, let us see if you can handle it...'
+              },
+              {
+                text: 'Just give me the magic already.',
+                callback: () => {
+                  this._pathChosen = 'reckless';
+                  this._dialoguePhase = 1;
+                },
+                nextDialogue: 'Impatient AND reckless. This will be... entertaining. Let me show you the basics before you kill yourself...'
+              }
+            ]
+          },
+          {
+            text: 'I don\'t know what I seek yet.',
+            nextDialogue: 'Uncertainty... not weakness, but honesty. The wise admit what they do not know.',
+            nextChoices: [
+              {
+                text: 'Then help me find my path.',
+                callback: () => {
+                  this._pathChosen = 'seeker';
+                  this._dialoguePhase = 1;
+                },
+                nextDialogue: 'A seeker of truth. Rare in these dark times. Let me guide you through the fundamentals...'
+              }
+            ]
+          }
+        ]
+      );
+    } else if (this._dialoguePhase === 1) {
+      // Teaching phase - triggered by choices
+      const pathText = this._pathChosen === 'reckless' ?
+        'Since you\'re so eager, let\'s start with the dangerous stuff first.' :
+        'First, the fundamentals. Pay attention - this knowledge has saved countless lives.';
+
+      showDialogue(this.name,
+        pathText + '\n\nCRAFTING: Press C to open your crafting table. Combine items in the 3x3 grid. Try: 2 Wood → 4 Sticks.',
+        [
+          {
+            text: 'Understood. What else?',
+            callback: () => {
+              this._dialoguePhase = 2;
+            },
+            nextDialogue: 'MAGIC. Here - take this Fire Spell. It\'s ancient, powerful, and volatile. Select it with 1-9, aim with your mouse, press F to cast. Costs 10 mana per shot.'
+          }
+        ]
+      );
+    } else if (this._dialoguePhase === 2) {
+      // Final warning before trial
+      const trialText = this._pathChosen === 'reckless' ?
+        'Now comes the fun part. I\'m activating two Training Droids. Try not to die immediately.' :
+        'Knowledge demands payment, child. Two Training Droids will test everything I just taught you.';
+
+      showDialogue(this.name,
+        trialText + '\n\nDefeat them both to prove you can survive. Fail, and... well. The archives have seen many failures.',
+        [
+          {
+            text: 'I\'m ready. Bring them on!',
+            callback: () => {
+              spawnTrainingDroids();
+              this._dialoguePhase = 3;
+            },
+            nextDialogue: 'The trial begins. Survive, and I shall teach you more. Good luck!'
+          },
+          {
+            text: 'Wait, can you explain again?',
+            callback: () => { this._dialoguePhase = 1; },
+            nextDialogue: 'Very well. A wise warrior knows when to ask questions...'
+          }
+        ]
+      );
+    } else if (this._dialoguePhase === 3) {
+      // During trial
+      if (!game.trialCompleted) {
+        showDialogue(this.name, 'The trial has begun. Survive, and the path forward opens. Good luck, young one.');
+      } else {
+        // Post-trial celebration and new activities
+        this._dialoguePhase = 4;
+        this.customDialogueHandler();
+      }
+    } else if (this._dialoguePhase === 4) {
+      // Post-trial rewards and activities unlock
+      const congratsText = this._pathChosen === 'reckless' ?
+        'Well, well! You actually survived. Color me impressed. You\'ve earned more than just passage forward.' :
+        'Excellent work! You\'ve proven yourself worthy. The true knowledge of this library is now yours to explore.';
+
+      showDialogue(this.name,
+        congratsText + '\n\nI shall unlock the library\'s INNER SANCTUM. Three stations await you...',
+        [
+          {
+            text: 'What kind of stations?',
+            nextDialogue: '⚗️ The ALCHEMY CRUCIBLE - Combine materials to create powerful potions and artifacts.\n\n🔮 The RUNIC ALTAR - Weave elemental energies into new spells.\n\n📚 The MEMORY TOME - Ancient knowledge awaits those who can unlock its secrets.',
+            nextChoices: [
+              {
+                text: 'I want to try the Alchemy Crucible!',
+                callback: () => {
+                  game.alchemyStationActive = true;
+                  this._dialoguePhase = 5;
+                },
+                nextDialogue: 'Step to the glowing crucible on the left. Combine items from your inventory - who knows what you\'ll discover?'
+              },
+              {
+                text: 'Show me the Runic Altar.',
+                callback: () => {
+                  game.runicPuzzleActive = true;
+                  this._dialoguePhase = 5;
+                },
+                nextDialogue: 'Approach the altar in the center. Match the runes to harness their power. Be warned - one mistake and the spell collapses!'
+              },
+              {
+                text: 'The Memory Tome sounds interesting.',
+                callback: () => {
+                  game.tomeMemoryActive = true;
+                  this._dialoguePhase = 5;
+                },
+                nextDialogue: 'The ancient tome on the right pedestal holds forgotten lore. Remember the pattern it shows... failure means starting over.'
+              },
+              {
+                text: 'I\'ll explore on my own.',
+                callback: () => {
+                  game.alchemyStationActive = true;
+                  game.runicPuzzleActive = true;
+                  game.tomeMemoryActive = true;
+                  this._dialoguePhase = 5;
+                },
+                nextDialogue: 'Independent as ever. All three stations are active. Return when you seek guidance... or when you\'re ready to leave this realm.'
+              }
+            ]
+          }
+        ]
+      );
+    } else if (this._dialoguePhase === 5) {
+      // After activities unlocked
+      const activitiesText = [];
+      if (game.alchemyStationActive) activitiesText.push('⚗️ Alchemy Crucible (left)');
+      if (game.runicPuzzleActive) activitiesText.push('🔮 Runic Altar (center)');
+      if (game.tomeMemoryActive) activitiesText.push('📚 Memory Tome (right)');
+
+      const allActive = game.alchemyStationActive && game.runicPuzzleActive && game.tomeMemoryActive;
+
+      if (!allActive) {
+        showDialogue(this.name,
+          'The library\'s stations are ready for you:\n\n' + activitiesText.join('\n') + '\n\nExperiment, learn, and grow stronger.',
+          [
+            {
+              text: 'Unlock all activities for me.',
+              callback: () => {
+                game.alchemyStationActive = true;
+                game.runicPuzzleActive = true;
+                game.tomeMemoryActive = true;
+              },
+              nextDialogue: 'Very well. All three stations are now active. May your discoveries be profound.'
+            }
+          ]
+        );
+      } else {
+        showDialogue(this.name, 'All stations are active. Continue your studies, or venture onward to the Water Realm when ready. The choice is yours.');
+      }
+    }
+  };
+
+  game.npcs.push(archiveKeeper);
+
+  // Water Queen access gate (unlocked after Library trial)
+  const tideGate = new NPC(
     0,
     0,
     'Tide Gate',

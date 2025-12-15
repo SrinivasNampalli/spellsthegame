@@ -100,6 +100,22 @@ export function createResourceNodes() {
     yield: [{ id: 'ancient_page', count: 1 }],
   });
 
+  game.resourceNodes.push({
+    id: 'rune_crystal_pedestal',
+    name: 'Rune Crystal Pedestal',
+    icon: '💎',
+    biome: 'mysticalLibrary',
+    width: 28,
+    height: 28,
+    x: 0,
+    y: 0,
+    anchor: { x: 0.72, y: 0.72 },
+    active: true,
+    respawnMs: 14000,
+    cooldownMs: 0,
+    yield: [{ id: 'mana_crystal', count: 1 }],
+  });
+
   // Magma Kingdom
   game.resourceNodes.push({
     id: 'magma_vein',
@@ -138,6 +154,22 @@ export function createResourceNodes() {
       { id: 'pearl', count: 1 },
       { id: 'water_drop', count: 1 },
     ],
+  });
+
+  game.resourceNodes.push({
+    id: 'seaweed_patch',
+    name: 'Seaweed Patch',
+    icon: '🌿',
+    biome: 'waterQueenRealm',
+    width: 28,
+    height: 28,
+    x: 0,
+    y: 0,
+    anchor: { x: 0.18, y: 0.72 },
+    active: true,
+    respawnMs: 9000,
+    cooldownMs: 0,
+    yield: [{ id: 'water_drop', count: 2 }],
   });
 
   // Glitched Void
@@ -241,4 +273,3 @@ export function consumeItemsFromInventory(itemId, count) {
   }
   return false;
 }
-

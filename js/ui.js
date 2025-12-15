@@ -1,4 +1,57 @@
 import { canvas, ctx, game, dom } from './context.js';
+
+// Create audio context for sound effects
+let audioContext = null;
+function getAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+}
+
+function playBlip() {
+  try {
+    const ctx = getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.frequency.value = 800;
+    oscillator.type = 'square';
+
+    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.05);
+  } catch (e) {
+    // Ignore audio errors
+  }
+}
+
+function playChoiceSound() {
+  try {
+    const ctx = getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.frequency.value = 600;
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.1);
+  } catch (e) {
+    // Ignore audio errors
+  }
+}
 import { biomes, items } from './data.js';
 import { clamp } from './utils.js';
 import { drawCraftingUI, drawGuideUI } from './crafting.js';
@@ -13,17 +66,120 @@ export function showToast(text, ms = 1400) {
   showToast._t = setTimeout(() => dom.toastEl.classList.add('hidden'), ms);
 }
 
-export function showDialogue(npcName, text) {
+export function showDialogue(npcName, text, choices = null) {
   game.dialogueActive = true;
   dom.dialogueBox?.classList.remove('hidden');
   if (dom.npcNameEl) dom.npcNameEl.textContent = npcName;
-  if (dom.dialogueTextEl) dom.dialogueTextEl.textContent = text;
+
+  // Start typing animation
+  game.dialogueFullText = text;
+  game.dialogueVisibleText = '';
+  game.dialogueTypingIndex = 0;
+  game.dialogueTypingTimer = 0;
+  game.dialogueTypingComplete = false;
+  game.dialogueLastBlipTime = 0;
+
+  if (dom.dialogueTextEl) dom.dialogueTextEl.textContent = '';
+
+  // Handle choices
+  if (choices && choices.length > 0) {
+    game.dialogueHasChoices = true;
+    game.dialogueChoices = choices;
+    if (dom.dialogueChoicesEl) dom.dialogueChoicesEl.classList.add('hidden');
+    if (dom.dialogueContinueEl) dom.dialogueContinueEl.classList.add('hidden');
+  } else {
+    game.dialogueHasChoices = false;
+    game.dialogueChoices = [];
+    if (dom.dialogueChoicesEl) dom.dialogueChoicesEl.classList.add('hidden');
+    if (dom.dialogueContinueEl) dom.dialogueContinueEl.classList.remove('hidden');
+  }
+}
+
+export function showDialogueChoices() {
+  if (!game.dialogueHasChoices || !dom.dialogueChoicesEl) return;
+
+  dom.dialogueChoicesEl.innerHTML = '';
+  dom.dialogueChoicesEl.classList.remove('hidden');
+
+  game.dialogueChoices.forEach((choice, index) => {
+    const choiceEl = document.createElement('div');
+    choiceEl.className = 'dialogue-choice';
+    choiceEl.innerHTML = `<span class="dialogue-choice-key">${index + 1}</span>${choice.text}`;
+
+    choiceEl.addEventListener('click', () => {
+      playChoiceSound();
+      handleDialogueChoice(choice);
+    });
+
+    dom.dialogueChoicesEl.appendChild(choiceEl);
+  });
+}
+
+function handleDialogueChoice(choice) {
+  // Hide choices
+  if (dom.dialogueChoicesEl) dom.dialogueChoicesEl.classList.add('hidden');
+
+  // Execute choice callback
+  if (choice.callback) {
+    choice.callback();
+  }
+
+  // Show next dialogue if provided
+  if (choice.nextDialogue) {
+    showDialogue(game.currentNPC?.name || 'NPC', choice.nextDialogue, choice.nextChoices);
+  } else {
+    // No next dialogue, hide dialogue box
+    hideDialogue();
+  }
 }
 
 export function hideDialogue() {
   game.dialogueActive = false;
   game.currentNPC = null;
   dom.dialogueBox?.classList.add('hidden');
+}
+
+export function updateDialogueTyping(deltaTime) {
+  if (!game.dialogueActive || game.dialogueTypingComplete) return;
+
+  // Update typing timer
+  game.dialogueTypingTimer += deltaTime;
+
+  // Calculate how many characters should be visible
+  const charsPerSecond = game.dialogueTypingSpeed;
+  const targetIndex = Math.floor((game.dialogueTypingTimer / 1000) * charsPerSecond);
+
+  // Update visible text if we have more characters to show
+  if (targetIndex > game.dialogueTypingIndex && game.dialogueTypingIndex < game.dialogueFullText.length) {
+    const previousIndex = game.dialogueTypingIndex;
+    game.dialogueTypingIndex = Math.min(targetIndex, game.dialogueFullText.length);
+    game.dialogueVisibleText = game.dialogueFullText.substring(0, game.dialogueTypingIndex);
+
+    if (dom.dialogueTextEl) {
+      dom.dialogueTextEl.textContent = game.dialogueVisibleText;
+    }
+
+    // Play blip sound every few characters
+    const charsSinceLastBlip = game.dialogueTypingIndex - previousIndex;
+    if (charsSinceLastBlip > 0 && game.dialogueTypingTimer - game.dialogueLastBlipTime > 50) {
+      // Only blip on non-space characters
+      const newChars = game.dialogueFullText.substring(previousIndex, game.dialogueTypingIndex);
+      if (newChars.trim().length > 0) {
+        playBlip();
+        game.dialogueLastBlipTime = game.dialogueTypingTimer;
+      }
+    }
+
+    // Check if typing is complete
+    if (game.dialogueTypingIndex >= game.dialogueFullText.length) {
+      game.dialogueTypingComplete = true;
+
+      // Show choices if available
+      if (game.dialogueHasChoices) {
+        showDialogueChoices();
+      }
+    }
+  }
 }
 
 export function bindLevelUpUI() {

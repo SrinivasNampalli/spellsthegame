@@ -15,11 +15,21 @@
             <div id="dialogue-box" class="hidden">
                 <div id="npc-name"></div>
                 <div id="dialogue-text"></div>
+                <div id="dialogue-choices" class="hidden"></div>
                 <div id="dialogue-continue">Press E to continue</div>
             </div>
+
+            <!-- Audio for dialogue -->
+            <audio id="dialogue-blip" preload="auto">
+                <source src="sounds/blip.mp3" type="audio/mpeg">
+            </audio>
+            <audio id="dialogue-choice" preload="auto">
+                <source src="sounds/choice.mp3" type="audio/mpeg">
+            </audio>
         </div>
     </div>
 
     <script type="module" src="game.js"></script>
 </body>
 </html>
+

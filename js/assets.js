@@ -16,7 +16,7 @@ export const sprites = {
 };
 
 let spritesLoaded = 0;
-const totalSprites = 5; // Player + 4 NPCs
+const totalSprites = 6; // Player + 4 NPCs + fire spell
 
 // Trim/crop big portraits so characters don't look "smushed"
 // Trim values are percentages of the source image edges.
@@ -85,6 +85,7 @@ export function loadSprites() {
     ['blacksmith', 'images/blacksmith.png'],
     ['mysteriousDude', 'images/mysteriousdude.png'],
     ['waterQueen', 'images/waterqueen.png'],
+    ['fireSpell', 'images/firespell.png'],
   ];
 
   for (const [key, src] of loadBlocking) {
@@ -116,4 +117,3 @@ export function loadSprites() {
 export function enforcePixelArt() {
   ctx.imageSmoothingEnabled = false;
 }
-

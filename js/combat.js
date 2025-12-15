@@ -3,6 +3,7 @@ import { clamp } from './utils.js';
 import { spawnParticle } from './particles.js';
 import { saveGameState } from './persistence.js';
 import { sprites } from './assets.js';
+import { items } from './data.js';
 
 export function addScreenShake(ms, strength) {
   game.shakeMs = Math.max(game.shakeMs, ms);
@@ -10,17 +11,51 @@ export function addScreenShake(ms, strength) {
 }
 
 export function updateScreenShake(deltaTime) {
-  if (game.shakeMs <= 0) return;
+  if (game.shakeMs <= 0 || game.shakeStrength <= 0) {
+    game.shakeMs = Math.max(0, game.shakeMs || 0);
+    game.shakeStrength = Math.max(0, game.shakeStrength || 0);
+    game.shakeX = 0;
+    game.shakeY = 0;
+    return;
+  }
+
   game.shakeMs = Math.max(0, game.shakeMs - deltaTime);
-  if (game.shakeMs <= 0) game.shakeStrength = 0;
+  if (game.shakeMs <= 0) {
+    game.shakeStrength = 0;
+    game.shakeX = 0;
+    game.shakeY = 0;
+    return;
+  }
+
+  // Compute once per frame so aiming/FX can share the same offset.
+  game.shakeX = (Math.random() - 0.5) * game.shakeStrength;
+  game.shakeY = (Math.random() - 0.5) * game.shakeStrength;
 }
 
 export function getShakeOffset() {
-  if (game.shakeMs <= 0 || game.shakeStrength <= 0) return { x: 0, y: 0 };
-  return {
-    x: (Math.random() - 0.5) * game.shakeStrength,
-    y: (Math.random() - 0.5) * game.shakeStrength,
-  };
+  return { x: game.shakeX || 0, y: game.shakeY || 0 };
+}
+
+function dropLoot(enemy) {
+  const loot = enemy?.loot;
+  if (!Array.isArray(loot) || loot.length === 0) return;
+
+  for (const drop of loot) {
+    if (!drop?.id) continue;
+    const def = items[drop.id];
+    if (!def) continue;
+    const chance = typeof drop.chance === 'number' ? drop.chance : 1;
+    if (Math.random() > chance) continue;
+
+    const count = Math.max(1, drop.count ?? 1);
+    game.droppedItems.push({
+      x: enemy.x + enemy.width / 2 - 10 + (Math.random() - 0.5) * 10,
+      y: enemy.y + enemy.height / 2 - 10 + (Math.random() - 0.5) * 10,
+      width: 20,
+      height: 20,
+      item: { ...def, id: drop.id, count },
+    });
+  }
 }
 
 export function spawnDamageNumber(x, y, text, color = '#fff') {
@@ -197,13 +232,196 @@ export class Enemy {
   }
 }
 
+// Training Droid - follows player, low HP, for tutorial
+export class TrainingDroid extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'mysticalLibrary');
+    this.maxHealth = 30;
+    this.health = this.maxHealth;
+    this.speed = 70;
+    this.width = 36;
+    this.height = 36;
+    this.followRange = 9999; // Always follows
+    this.attackCooldownMs = 1800;
+  }
+
+  update(deltaTime) {
+    if (this.isDead) return;
+
+    // Follow player
+    const px = game.player.x + game.player.width / 2;
+    const py = game.player.y + game.player.height / 2;
+    const dx = px - (this.x + this.width / 2);
+    const dy = py - (this.y + this.height / 2);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 50) {
+      this.vx = (dx / dist) * this.speed;
+      this.vy = (dy / dist) * this.speed;
+    } else {
+      this.vx *= 0.9;
+      this.vy *= 0.9;
+    }
+
+    const dt = deltaTime / 1000;
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+
+    const margin = 25;
+    this.x = clamp(this.x, margin, canvas.width - this.width - margin);
+    this.y = clamp(this.y, margin, canvas.height - this.height - margin);
+
+    // Attack player
+    this.attackTimerMs += deltaTime;
+    if (this.attackTimerMs >= this.attackCooldownMs && dist < 300) {
+      this.attackTimerMs = 0;
+      this.shootAtPlayer();
+    }
+  }
+
+  draw(ctx) {
+    if (this.isDead) return;
+
+    // Draw as red robot
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 80, 80, 0.7)';
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+    // Robot eye
+    ctx.fillStyle = '#ffff00';
+    ctx.fillRect(this.x + this.width / 2 - 4, this.y + this.height / 3, 8, 8);
+    ctx.restore();
+
+    // Health bar
+    const barW = 40;
+    const barH = 5;
+    const bx = this.x + this.width / 2 - barW / 2;
+    const by = this.y - 8;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx, by, barW, barH);
+    const hp01 = this.health / this.maxHealth;
+    ctx.fillStyle = hp01 < 0.3 ? '#ff4444' : '#44ff44';
+    ctx.fillRect(bx, by, barW * hp01, barH);
+  }
+}
+
+// Water minion - basic ranged foe for Water Queen Realm
+export class WaterMinion extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'waterQueenRealm');
+    this.maxHealth = 45;
+    this.health = this.maxHealth;
+    this.speed = 85;
+    this.width = 40;
+    this.height = 40;
+    this.attackCooldownMs = 1150 + Math.random() * 550;
+
+    // Loot used for Water Queen quest
+    this.loot = [
+      { id: 'water_core', count: 1, chance: 0.55 },
+      { id: 'water_drop', count: 1, chance: 0.4 },
+    ];
+  }
+
+  shootAtPlayer() {
+    if ((this.biome || 'home') !== game.currentBiome) return;
+    if (game.player.health <= 0) return;
+
+    const px = game.player.x + game.player.width / 2;
+    const py = game.player.y + game.player.height / 2;
+    const sx = this.x + this.width / 2;
+    const sy = this.y + this.height / 2;
+    const dx = px - sx;
+    const dy = py - sy;
+    const dist = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+    const nx = dx / dist;
+    const ny = dy / dist;
+    const spread = (Math.random() - 0.5) * 0.22;
+    const cos = Math.cos(spread);
+    const sin = Math.sin(spread);
+    const rx = nx * cos - ny * sin;
+    const ry = nx * sin + ny * cos;
+
+    const speed = 240;
+    game.projectiles.push({
+      type: 'water_bolt',
+      owner: 'enemy',
+      damage: 10,
+      x: sx,
+      y: sy,
+      vx: rx * speed,
+      vy: ry * speed,
+      age: 0,
+      lifetime: 3600,
+      size: 12,
+      color: '#66ccff',
+      icon: '💧',
+    });
+
+    spawnParticle({ x: sx, y: sy, vx: (Math.random() - 0.5) * 40, vy: -50, size: 3, color: '#66ccff', lifeMs: 520 });
+  }
+
+  draw(ctx) {
+    if (this.isDead) return;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(120, 220, 255, 0.75)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = 'rgba(90, 180, 255, 0.95)';
+    ctx.beginPath();
+    ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(240, 250, 255, 0.85)';
+    ctx.beginPath();
+    ctx.arc(this.x + this.width / 2 - 6, this.y + this.height / 2 - 8, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Health bar
+    const barW = 46;
+    const barH = 6;
+    const bx = this.x + this.width / 2 - barW / 2;
+    const by = this.y - 10;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx, by, barW, barH);
+    const hp01 = this.maxHealth > 0 ? this.health / this.maxHealth : 0;
+    ctx.fillStyle = hp01 < 0.3 ? '#ff4444' : '#44ffdd';
+    ctx.fillRect(bx, by, barW * hp01, barH);
+    ctx.restore();
+  }
+}
+
+export function spawnTrainingDroids() {
+  // Spawn 2 training droids in Mystical Library
+  const droid1 = new TrainingDroid(canvas.width * 0.3, canvas.height * 0.6);
+  const droid2 = new TrainingDroid(canvas.width * 0.7, canvas.height * 0.6);
+  game.enemies.push(droid1, droid2);
+  game.trialActive = true;
+  console.log('Training droids spawned! Defeat them to proceed.');
+}
+
+export function spawnWaterMinions() {
+  // Spawn 3 water minions after Water Queen interaction
+  const m1 = new WaterMinion(0, 0);
+  m1.anchor = { x: 0.35, y: 0.62 };
+  const m2 = new WaterMinion(0, 0);
+  m2.anchor = { x: 0.62, y: 0.52 };
+  const m3 = new WaterMinion(0, 0);
+  m3.anchor = { x: 0.78, y: 0.72 };
+  game.enemies.push(m1, m2, m3);
+  layoutEnemiesForBiome('waterRealm');
+  console.log('Water minions spawned!');
+}
+
 export function createEnemies() {
   game.enemies = [];
-
-  // First enemy: Mystical Library (Elder Mage realm)
-  const wisp = new Enemy(0, 0, 'mysticalLibrary');
-  wisp.anchor = { x: 0.7, y: 0.68 };
-  game.enemies.push(wisp);
+  // Enemies now spawn via NPC interactions instead of immediately
 }
 
 export function layoutEnemiesForBiome(biomeKey) {
@@ -228,10 +446,25 @@ export function updateEnemies(deltaTime) {
     const e = game.enemies[i];
     if (!e.isDead) continue;
     if ((e.biome || 'home') !== game.currentBiome) continue;
+    dropLoot(e);
     spawnParticle({ x: e.x + e.width / 2, y: e.y + e.height / 2, vx: (Math.random() - 0.5) * 70, vy: -80, size: 4, color: '#a67cff', lifeMs: 800 });
     game.enemies.splice(i, 1);
     game.player.addExperience(35);
     saveGameState();
+  }
+
+  // Check if Training Droid trial is complete
+  if (game.trialActive) {
+    const remainingDroids = game.enemies.filter((e) => e instanceof TrainingDroid && (e.biome || 'home') === game.currentBiome);
+    if (remainingDroids.length === 0) {
+      game.trialActive = false;
+      game.trialCompleted = true;
+      game.libraryActivitiesUnlocked = true;
+      game.flags.libraryTrialComplete = true;
+      game.flags.waterUnlocked = true;
+      console.log('🎉 Trial complete! The Archive Keeper has more to teach you...');
+      saveGameState();
+    }
   }
 }
 
@@ -327,4 +560,3 @@ export function drawProjectiles(ctx) {
     ctx.restore();
   }
 }
-

@@ -41,6 +41,11 @@ function serializeGameState() {
   return {
     v: 1,
     biome: game.currentBiome,
+    flags: {
+      libraryTrialComplete: !!game.flags?.libraryTrialComplete,
+      waterUnlocked: !!game.flags?.waterUnlocked,
+    },
+    craftingUnlocked: !!game.craftingUnlocked,
     player: {
       x: game.player.x,
       y: game.player.y,
@@ -65,6 +70,8 @@ function serializeGameState() {
 
 function applyGameState(state, canvas) {
   if (!state || typeof state !== 'object') return;
+
+  const hadFlags = !!(state.flags && typeof state.flags === 'object');
 
   if (state.player) {
     const p = state.player;
@@ -117,6 +124,25 @@ function applyGameState(state, canvas) {
   if (typeof state.biome === 'string' && biomes[state.biome]) {
     game.currentBiome = state.biome;
   }
+
+  if (hadFlags) {
+    game.flags = {
+      libraryTrialComplete: !!state.flags.libraryTrialComplete,
+      waterUnlocked: !!state.flags.waterUnlocked,
+    };
+  } else {
+    // Backwards-compat: older saves unlock Water Realm after learning Fire Spell.
+    const hasFireSpell = game.player.inventory.some((slot) => slot?.id === 'fire_spell');
+    const learnedFromKeeper = !!state.npcs?.['Archive Keeper']?.hasGivenItem;
+    if (hasFireSpell || learnedFromKeeper) {
+      game.flags.libraryTrialComplete = true;
+      game.flags.waterUnlocked = true;
+    }
+  }
+
+  if (typeof state.craftingUnlocked === 'boolean') {
+    game.craftingUnlocked = state.craftingUnlocked;
+  }
 }
 
 export function saveGameState() {
@@ -152,4 +178,3 @@ export function loadGameState(canvas) {
     console.warn('Failed to load save:', e);
   }
 }
-

@@ -26,8 +26,10 @@ import {
   updateScreenShake,
   getShakeOffset,
 } from './js/combat.js';
+import { drawAimAssist } from './js/spells.js';
 import { bindInput, updateEquippedWeapon } from './js/input.js';
-import { drawUI, bindLevelUpUI } from './js/ui.js';
+import { drawUI, bindLevelUpUI, updateDialogueTyping } from './js/ui.js';
+import { createLibraryStations } from './js/libraryActivities.js';
 import {
   resizeCanvas,
   bindResize,
@@ -62,6 +64,10 @@ function init() {
   createResourceNodes();
   createEnemies();
 
+  // Library activity stations
+  const libraryStations = createLibraryStations();
+  libraryStations.forEach(station => game.npcs.push(station));
+
   // Load save after content exists
   loadGameState(canvas);
 
@@ -92,6 +98,9 @@ function update(deltaTime) {
   enforcePixelArt();
   updateScreenShake(deltaTime);
   if (game.ui.levelFlashMs > 0) game.ui.levelFlashMs = Math.max(0, game.ui.levelFlashMs - deltaTime);
+
+  // Update dialogue typing animation
+  updateDialogueTyping(deltaTime);
 
   // Transitioning blocks gameplay updates
   if (updateTransition(deltaTime)) return;
@@ -347,6 +356,7 @@ function draw() {
   drawNodePrompt();
   drawNPCs();
 
+  drawAimAssist(ctx, game.mouseX - (shake.x || 0), game.mouseY - (shake.y || 0));
   drawPlayer();
   drawDamageNumbers(ctx);
 
@@ -368,4 +378,3 @@ function gameLoop(timestamp) {
 }
 
 window.addEventListener('load', init);
-

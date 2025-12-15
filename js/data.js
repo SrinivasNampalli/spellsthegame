@@ -20,8 +20,22 @@ export const items = {
   potion_mana: { name: 'Mana Potion', icon: '🧴', maxStack: 16, type: 'consumable', mana: 25, desc: 'Restores 25 mana' },
   berry: { name: 'Berry', icon: '🍓', maxStack: 64, type: 'consumable', heal: 3, desc: 'Restores 3 health' },
 
-  // Spells
-  fire_spell: { name: 'Fire Spell', sprite: 'fireSpell', maxStack: 64, type: 'spell', manaCost: 10, damage: 15, desc: 'Press F to cast. Costs 10 mana' },
+  // Spells (select in hotbar, then left-click to cast)
+  fire_spell: {
+    name: 'Fire Spell',
+    icon: '🔥',
+    sprite: 'fireSpell',
+    maxStack: 1,
+    type: 'spell',
+    manaCost: 14,
+    cooldownMs: 220,
+    damage: 18,
+    projectileSpeed: 520,
+    projectileLifetime: 1300,
+    projectileSize: 18,
+    color: '#ff7733',
+    desc: 'Left-click to cast. Costs 14 mana',
+  },
 
   // Ores/metals
   iron_ore: { name: 'Iron Ore', icon: '🪨', maxStack: 64, desc: 'Raw iron, needs smelting' },
@@ -34,6 +48,7 @@ export const items = {
   wand_basic: { name: 'Basic Wand', icon: '🪄', maxStack: 1, type: 'weapon', damage: 8, desc: 'A simple magical wand' },
 
   // Realm gatherables
+  water_core: { name: 'Water Core', icon: '💠', maxStack: 32, desc: 'Condensed tide magic from minions' },
   ancient_page: { name: 'Ancient Page', icon: '📜', maxStack: 64, desc: 'Contains ancient knowledge' },
   lava_core: { name: 'Lava Core', icon: '🌋', maxStack: 32, desc: 'Hot volcanic essence' },
   pearl: { name: 'Pearl', icon: '🦪', maxStack: 64, desc: 'Precious ocean gem' },
@@ -118,4 +133,3 @@ export function initRecipes(recipesArr) {
     if (!recipe.unlock) recipe.unlock = 'ingredients';
   }
 }
-

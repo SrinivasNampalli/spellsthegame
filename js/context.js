@@ -8,6 +8,10 @@ export const dom = {
   dialogueBox: document.getElementById('dialogue-box'),
   npcNameEl: document.getElementById('npc-name'),
   dialogueTextEl: document.getElementById('dialogue-text'),
+  dialogueChoicesEl: document.getElementById('dialogue-choices'),
+  dialogueContinueEl: document.getElementById('dialogue-continue'),
+  dialogueBlipAudio: document.getElementById('dialogue-blip'),
+  dialogueChoiceAudio: document.getElementById('dialogue-choice'),
 };
 
 export const game = {
@@ -16,11 +20,28 @@ export const game = {
   player: null,
   currentBiome: 'home',
 
+  // Progress flags (persisted)
+  flags: {
+    libraryTrialComplete: false,
+    waterUnlocked: false,
+  },
+
   // NPCs
   npcs: [],
   interactableNearby: null,
   dialogueActive: false,
   currentNPC: null,
+
+  // Dialogue typing animation
+  dialogueFullText: '',
+  dialogueVisibleText: '',
+  dialogueTypingIndex: 0,
+  dialogueTypingSpeed: 40, // characters per second
+  dialogueTypingTimer: 0,
+  dialogueTypingComplete: false,
+  dialogueHasChoices: false,
+  dialogueChoices: [],
+  dialogueLastBlipTime: 0,
 
   // Transitions
   transitioning: false,
@@ -32,6 +53,7 @@ export const game = {
 
   // Crafting/Guide
   craftingOpen: false,
+  craftingUnlocked: false, // Unlocked by Elder Mage
   guideOpen: false,
   guideScroll: 0,
   discoveredRecipes: new Set(),
@@ -67,6 +89,22 @@ export const game = {
   damageNumbers: [],
   shakeMs: 0,
   shakeStrength: 0,
+  shakeX: 0,
+  shakeY: 0,
+  trialActive: false, // Training Droid trial
+  trialCompleted: false, // Trial completed successfully
+
+  // Library activities
+  libraryActivitiesUnlocked: false,
+  alchemyStationActive: false,
+  runicPuzzleActive: false,
+  tomeMemoryActive: false,
+
+  // Mini-game states
+  runicPuzzle: null,
+  runicPuzzleInputMode: false,
+  memoryGame: null,
+  memoryGameInputMode: false,
 
   // Particles
   particles: [],
@@ -110,4 +148,3 @@ export const keys = {
   8: false,
   9: false,
 };
-

@@ -324,6 +324,10 @@ export function craftAllItems() {
 }
 
 export function toggleCrafting() {
+  if (!game.craftingUnlocked) {
+    console.log('Crafting is locked. Visit the Elder Mage to unlock it!');
+    return;
+  }
   game.craftingOpen = !game.craftingOpen;
   if (!game.craftingOpen) {
     for (let row = 0; row < 3; row++) {
