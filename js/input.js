@@ -15,7 +15,7 @@ import {
   handleMouseWheel,
 } from './crafting.js';
 import { castSelectedSpellAt } from './spells.js';
-import { spawnTrainingDroids, spawnWaterMinions } from './combat.js';
+import { spawnTrainingDroids, spawnWaterMinions, spawnWaterQueen } from './combat.js';
 import { handleRunicInput, handleMemoryInput, hideMinigame } from './libraryActivities.js';
 
 export function updateEquippedWeapon() {
@@ -74,6 +74,21 @@ export function tryRespawn() {
   game.damageNumbers = [];
   game.shakeMs = 0;
   game.shakeStrength = 0;
+
+  // Reset Water Queen boss if active
+  if (game.waterQueenBossActive) {
+    game.waterQueenBossActive = false;
+    // Remove boss from enemies
+    game.enemies = game.enemies.filter(e => e.constructor.name !== 'WaterQueen');
+    // Unhide Water Queen NPC and reset dialogue
+    const waterQueenNPC = game.npcs.find(n => n.name === 'Water Queen');
+    if (waterQueenNPC) {
+      waterQueenNPC.hidden = false;
+      waterQueenNPC.dialogueIndex = 0;
+      waterQueenNPC._bossSpawned = false;
+    }
+  }
+
   saveGameState();
 }
 
@@ -123,16 +138,20 @@ export function handleInteraction() {
 
     // Teleport if dialogue looped back
     if (game.currentNPC.dialogueIndex === 0) {
-      // Archive Keeper spawns Training Droids when dialogue completes (only once)
-      if (game.currentNPC.name === 'Archive Keeper' && !game.trialActive && !game.trialCompleted && !game.currentNPC._droidsSpawned) {
-        spawnTrainingDroids();
-        game.currentNPC._droidsSpawned = true;
+      // Archive Keeper unlocks mind game stations when dialogue completes (only once)
+      if (game.currentNPC.name === 'Archive Keeper' && !game.currentNPC._stationsUnlocked) {
+        game.libraryActivitiesUnlocked = true; // Make stations visible
+        game.alchemyStationActive = true;
+        game.runicPuzzleActive = true;
+        game.tomeMemoryActive = true;
+        game.currentNPC._stationsUnlocked = true;
+        saveGameState();
       }
 
-      // Water Queen spawns minions on first interaction complete
-      if (game.currentNPC.name === 'Water Queen' && !game.currentNPC._minionsSpawned) {
-        spawnWaterMinions();
-        game.currentNPC._minionsSpawned = true;
+      // Water Queen boss fight spawns on first interaction complete
+      if (game.currentNPC.name === 'Water Queen' && !game.currentNPC._bossSpawned) {
+        spawnWaterQueen();
+        game.currentNPC._bossSpawned = true;
       }
 
       if (game.currentNPC.teleportTo) startTransition(game.currentNPC.teleportTo);
@@ -245,6 +264,15 @@ function handleKeyDown(e) {
   if (key === 'r' && !keys.r) tryRespawn();
   if (key === 'm' && !keys.m) {
     if (game.minigameActive) hideMinigame();
+  }
+
+  // Debug cheat: Press 3 to unlock Water Realm
+  if (key === '3' && !game.dialogueActive && !game.minigameActive && !game.runicPuzzleInputMode && !game.memoryGameInputMode) {
+    game.flags = game.flags || {};
+    game.flags.waterUnlocked = true;
+    game.trialCompleted = true;
+    saveGameState();
+    console.log('🌊 Water Realm Unlocked! (Debug cheat)');
   }
 
   if (key >= '1' && key <= '9') {

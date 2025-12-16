@@ -2,8 +2,9 @@ import { canvas, game } from './context.js';
 import { clamp } from './utils.js';
 import { spawnParticle } from './particles.js';
 import { saveGameState } from './persistence.js';
-import { sprites } from './assets.js';
+import { sprites, drawSprite } from './assets.js';
 import { items } from './data.js';
+import { showToast } from './ui.js';
 
 export function addScreenShake(ms, strength) {
   game.shakeMs = Math.max(game.shakeMs, ms);
@@ -308,6 +309,344 @@ export class TrainingDroid extends Enemy {
 }
 
 // Water minion - basic ranged foe for Water Queen Realm
+// Water Queen Boss - Advanced water-based attacks
+export class WaterQueen extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'waterQueenRealm');
+    this.maxHealth = 500;
+    this.health = this.maxHealth;
+    this.speed = 60;
+    this.width = 80;
+    this.height = 80;
+    this.isBoss = true;
+    this.attackCooldownMs = 2500;
+
+    // Attack pattern tracking
+    this.tsunamiCooldown = 0;
+    this.orbCooldown = 0;
+    this.whirlpoolCooldown = 0;
+    this.currentAttack = 0;
+
+    // Tsunami wave data
+    this.tsunamiActive = false;
+    this.tsunamiX = 0;
+    this.tsunamiDirection = 1;
+    this.tsunamiSpeed = 200;
+    this.tsunamiGapY = 0; // Y position of safe gap
+    this.tsunamiGapHeight = 120; // Height of safe gap
+
+    // Whirlpool traps
+    this.whirlpools = [];
+
+    // Voice line tracking
+    this.voiceLines = {
+      75: { text: '💧 Water Queen: "You dare challenge me? The ocean will consume you!"', triggered: false },
+      50: { text: '💧 Water Queen: "Impossible! You\'re stronger than I thought..."', triggered: false },
+      25: { text: '💧 Water Queen: "No... this cannot be! I am the TIDE ITSELF!"', triggered: false }
+    };
+
+    this.loot = [
+      { id: 'water_crown', count: 1, chance: 1.0 },
+      { id: 'water_core', count: 3, chance: 1.0 },
+    ];
+  }
+
+  update(deltaTime) {
+    super.update(deltaTime);
+
+    // Check voice line triggers based on health percentage
+    const healthPercent = (this.health / this.maxHealth) * 100;
+    for (const [threshold, voiceLine] of Object.entries(this.voiceLines)) {
+      if (!voiceLine.triggered && healthPercent <= parseFloat(threshold)) {
+        showToast(voiceLine.text, 3000);
+        voiceLine.triggered = true;
+      }
+    }
+
+    // Update cooldowns
+    this.tsunamiCooldown = Math.max(0, this.tsunamiCooldown - deltaTime);
+    this.orbCooldown = Math.max(0, this.orbCooldown - deltaTime);
+    this.whirlpoolCooldown = Math.max(0, this.whirlpoolCooldown - deltaTime);
+
+    // Update tsunami wave
+    if (this.tsunamiActive) {
+      this.tsunamiX += this.tsunamiDirection * this.tsunamiSpeed * (deltaTime / 1000);
+
+      // Check if tsunami hit player (but not in the safe gap)
+      const playerCenterX = game.player.x + game.player.width / 2;
+      const playerCenterY = game.player.y + game.player.height / 2;
+
+      // Check if player is in the gap zone (safe)
+      const inGap = playerCenterY >= this.tsunamiGapY &&
+                    playerCenterY <= this.tsunamiGapY + this.tsunamiGapHeight;
+
+      if (Math.abs(this.tsunamiX - playerCenterX) < 60 && !inGap) {
+        // Knockback player
+        const knockbackForce = 300;
+        game.player.x += this.tsunamiDirection * knockbackForce * (deltaTime / 1000);
+        game.player.takeDamage(15);
+        addScreenShake(200, 8);
+      }
+
+      // Deactivate if off screen
+      if (this.tsunamiX < -100 || this.tsunamiX > canvas.width + 100) {
+        this.tsunamiActive = false;
+      }
+    }
+
+    // Update whirlpools
+    this.whirlpools = this.whirlpools.filter(pool => {
+      pool.lifetime -= deltaTime;
+
+      // Check player collision with whirlpool
+      const dx = (game.player.x + game.player.width / 2) - pool.x;
+      const dy = (game.player.y + game.player.height / 2) - pool.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < pool.radius && !pool.triggered) {
+        // Player stepped in whirlpool!
+        pool.triggered = true;
+        game.player.mana = 0; // Drain all mana
+        game.player.takeDamage(game.player.maxHealth * 0.5); // 50% HP damage
+        addScreenShake(500, 15);
+
+        // Spawn dramatic particles
+        for (let i = 0; i < 20; i++) {
+          const angle = (i / 20) * Math.PI * 2;
+          spawnParticle({
+            x: pool.x,
+            y: pool.y,
+            vx: Math.cos(angle) * 150,
+            vy: Math.sin(angle) * 150,
+            size: 8,
+            color: '#0088ff',
+            lifeMs: 800
+          });
+        }
+      }
+
+      return pool.lifetime > 0;
+    });
+  }
+
+  shootAtPlayer() {
+    if ((this.biome || 'home') !== game.currentBiome) return;
+    if (game.player.health <= 0) return;
+
+    // Cycle through attack patterns
+    const attackType = this.currentAttack % 3;
+    this.currentAttack++;
+
+    if (attackType === 0 && this.tsunamiCooldown <= 0) {
+      this.useTsunamiAttack();
+    } else if (attackType === 1 && this.orbCooldown <= 0) {
+      this.useWaterOrbBarrage();
+    } else if (attackType === 2 && this.whirlpoolCooldown <= 0) {
+      this.spawnWhirlpools();
+    } else {
+      // Fallback to basic attack
+      this.useWaterOrbBarrage();
+    }
+  }
+
+  useTsunamiAttack() {
+    this.tsunamiCooldown = 8000; // 8 second cooldown
+    this.tsunamiActive = true;
+
+    // Alternate direction
+    this.tsunamiDirection = Math.random() < 0.5 ? 1 : -1;
+    this.tsunamiX = this.tsunamiDirection > 0 ? -50 : canvas.width + 50;
+
+    // Random safe gap position (player must dodge to this Y zone)
+    this.tsunamiGapY = Math.random() * (canvas.height - this.tsunamiGapHeight);
+
+    addScreenShake(300, 5);
+  }
+
+  useWaterOrbBarrage() {
+    this.orbCooldown = 5000; // 5 second cooldown
+
+    // Spawn 6 bouncing water orbs (increased from 3)
+    for (let i = 0; i < 6; i++) {
+      const sx = this.x + this.width / 2;
+      const sy = this.y + this.height / 2;
+
+      const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      const speed = 200;
+
+      game.projectiles.push({
+        type: 'water_orb',
+        owner: 'enemy',
+        damage: 5,
+        x: sx,
+        y: sy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        age: 0,
+        lifetime: 8000,
+        size: 20,
+        color: '#00aaff',
+        icon: '💧',
+        bounces: 0,
+        maxBounces: 5
+      });
+    }
+  }
+
+  spawnWhirlpools() {
+    this.whirlpoolCooldown = 10000; // 10 second cooldown
+
+    // Spawn 2-3 whirlpools at random positions
+    const count = 2 + Math.floor(Math.random() * 2);
+
+    for (let i = 0; i < count; i++) {
+      this.whirlpools.push({
+        x: Math.random() * (canvas.width - 200) + 100,
+        y: Math.random() * (canvas.height - 200) + 100,
+        radius: 50,
+        lifetime: 6000,
+        triggered: false
+      });
+    }
+  }
+
+  draw(ctx) {
+    if (this.isDead) return;
+
+    // Draw whirlpools first (behind everything)
+    this.whirlpools.forEach(pool => {
+      ctx.save();
+
+      // Pulsing animation
+      const pulse = 1 + Math.sin(Date.now() / 200) * 0.1;
+      const radius = pool.radius * pulse;
+
+      // Swirl effect
+      const rotation = (Date.now() / 50) % 360;
+      ctx.translate(pool.x, pool.y);
+      ctx.rotate((rotation * Math.PI) / 180);
+
+      // Draw whirlpool using image if available
+      if (sprites.waterwhole) {
+        ctx.drawImage(sprites.waterwhole, -radius, -radius, radius * 2, radius * 2);
+      } else {
+        // Fallback spiral
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+        gradient.addColorStop(0, 'rgba(0, 50, 150, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(0, 100, 200, 0.5)');
+        gradient.addColorStop(1, 'rgba(0, 136, 255, 0.2)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Warning text
+      if (!pool.triggered) {
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️ DANGER', pool.x, pool.y - radius - 10);
+      }
+    });
+
+    // Draw tsunami wave with safe gap
+    if (this.tsunamiActive) {
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+
+      const waveWidth = 120;
+
+      if (sprites.tsunami) {
+        // Draw top part of tsunami (above gap)
+        const topHeight = this.tsunamiGapY;
+        if (topHeight > 0) {
+          ctx.drawImage(
+            sprites.tsunami,
+            0, 0, sprites.tsunami.width, topHeight / canvas.height * sprites.tsunami.height,
+            this.tsunamiX - waveWidth / 2, 0, waveWidth, topHeight
+          );
+        }
+
+        // Draw bottom part of tsunami (below gap)
+        const bottomY = this.tsunamiGapY + this.tsunamiGapHeight;
+        const bottomHeight = canvas.height - bottomY;
+        if (bottomHeight > 0) {
+          ctx.drawImage(
+            sprites.tsunami,
+            0, bottomY / canvas.height * sprites.tsunami.height,
+            sprites.tsunami.width, bottomHeight / canvas.height * sprites.tsunami.height,
+            this.tsunamiX - waveWidth / 2, bottomY, waveWidth, bottomHeight
+          );
+        }
+
+        // Draw arrow indicator pointing to safe gap
+        ctx.globalAlpha = 0.8 + Math.sin(Date.now() / 200) * 0.2;
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        const arrowY = this.tsunamiGapY + this.tsunamiGapHeight / 2;
+        ctx.fillText('→', 50, arrowY);
+        ctx.fillText('←', canvas.width - 50, arrowY);
+
+        // Safe zone text
+        ctx.fillStyle = '#00ff00';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText('SAFE', canvas.width / 2, arrowY);
+      }
+
+      ctx.restore();
+    }
+
+    // Draw boss (Water Queen sprite or fallback)
+    ctx.save();
+    if (sprites.waterQueen) {
+      drawSprite(ctx, sprites.waterQueen, this.x, this.y, this.width, this.height, 'waterQueen');
+    } else {
+      // Fallback visual
+      ctx.shadowColor = 'rgba(0, 170, 255, 0.8)';
+      ctx.shadowBlur = 25;
+      ctx.fillStyle = 'rgba(0, 150, 255, 0.95)';
+      ctx.beginPath();
+      ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Crown
+      ctx.fillStyle = '#ffdd00';
+      ctx.font = '24px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('👑', this.x + this.width / 2, this.y + 15);
+    }
+    ctx.restore();
+
+    // Boss health bar (larger)
+    const barW = 120;
+    const barH = 10;
+    const bx = this.x + this.width / 2 - barW / 2;
+    const by = this.y - 20;
+
+    ctx.fillStyle = 'rgba(40, 40, 40, 0.8)';
+    ctx.fillRect(bx, by, barW, barH);
+
+    const ratio = Math.max(0, this.health / this.maxHealth);
+    ctx.fillStyle = '#00aaff';
+    ctx.fillRect(bx, by, barW * ratio, barH);
+
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, by, barW, barH);
+
+    // Boss name
+    ctx.fillStyle = '#ffdd00';
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('💧 WATER QUEEN 💧', this.x + this.width / 2, by - 8);
+  }
+}
+
 export class WaterMinion extends Enemy {
   constructor(x, y) {
     super(x, y, 'waterQueenRealm');
@@ -406,6 +745,24 @@ export function spawnTrainingDroids() {
   console.log('Training droids spawned! Defeat them to proceed.');
 }
 
+export function spawnWaterQueen() {
+  // Transform the Water Queen NPC into the boss
+  const npc = game.npcs.find(n => n.name === 'Water Queen');
+  if (!npc) {
+    console.error('Water Queen NPC not found!');
+    return;
+  }
+
+  // Hide the NPC and spawn boss at same location
+  npc.hidden = true;
+
+  const queen = new WaterQueen(npc.x, npc.y);
+  queen.biome = 'waterQueenRealm';
+  game.enemies.push(queen);
+  game.waterQueenBossActive = true;
+  console.log('💧 Water Queen boss spawned!');
+}
+
 export function spawnWaterMinions() {
   // Spawn 3 water minions after Water Queen interaction
   const m1 = new WaterMinion(0, 0);
@@ -480,6 +837,32 @@ export function updateProjectiles(deltaTime) {
 
     proj.x += proj.vx * dt;
     proj.y += proj.vy * dt;
+
+    // Bouncing water orbs
+    if (proj.type === 'water_orb' && proj.bounces !== undefined) {
+      const margin = 20;
+
+      // Bounce off walls
+      if (proj.x < margin || proj.x > canvas.width - margin) {
+        proj.vx *= -0.9; // Reverse and dampen
+        proj.x = Math.max(margin, Math.min(canvas.width - margin, proj.x));
+        proj.bounces++;
+        spawnParticle({ x: proj.x, y: proj.y, vx: (Math.random() - 0.5) * 60, vy: -40, size: 5, color: '#00aaff', lifeMs: 400 });
+      }
+
+      if (proj.y < margin || proj.y > canvas.height - margin) {
+        proj.vy *= -0.9;
+        proj.y = Math.max(margin, Math.min(canvas.height - margin, proj.y));
+        proj.bounces++;
+        spawnParticle({ x: proj.x, y: proj.y, vx: (Math.random() - 0.5) * 60, vy: -40, size: 5, color: '#00aaff', lifeMs: 400 });
+      }
+
+      // Remove after too many bounces
+      if (proj.bounces > (proj.maxBounces || 5)) {
+        game.projectiles.splice(i, 1);
+        continue;
+      }
+    }
 
     // Enemy projectile collision with player
     if (proj.owner === 'enemy' && game.player.health > 0) {

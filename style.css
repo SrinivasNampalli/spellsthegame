@@ -432,3 +432,149 @@ body {
     color: #ffcc00;
     font-weight: bold;
 }
+
+/* Additional animations for mini-games */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.ingredient-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+}
+
+.memory-answer-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(136, 170, 255, 0.6);
+}
+
+.rune-selectable:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Pixel Art Theme for Mini-games */
+.pixel-panel {
+    background: #1a1a2e;
+    border: 4px solid #0f0f1e;
+    box-shadow:
+        inset 0 0 0 2px #2a2a3e,
+        0 4px 0 #0a0a0f,
+        0 8px 20px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.pixel-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffcc00;
+    text-shadow:
+        2px 0 0 #aa8800,
+        0 2px 0 #aa8800,
+        2px 2px 0 #aa8800;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.pixel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #0f0f1e;
+    border: 2px solid #2a2a3e;
+}
+
+.pixel-badge {
+    background: #2a2a3e;
+    border: 2px solid #ffcc00;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: #ffcc00;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.pixel-text {
+    font-size: 13px;
+    color: #e0e0e0;
+    line-height: 1.6;
+    font-family: 'Courier New', monospace;
+}
+
+.pixel-button {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    border: 2px solid #444;
+    background: #2a2a3e;
+    color: #fff;
+    transition: all 0.1s;
+    cursor: pointer;
+}
+
+.pixel-button:hover {
+    background: #3a3a4e;
+    border-color: #ffcc00;
+    transform: translateY(-1px);
+}
+
+.pixel-button:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-button.selected {
+    background: #ffcc00;
+    color: #1a1a2e;
+    border-color: #ffdd44;
+}
+
+.alchemy-cell {
+    transition: all 0.2s;
+}
+
+.alchemy-cell:hover:not(:disabled) {
+    background: #3a3a5e !important;
+    border-color: #88aaff !important;
+    transform: scale(1.05);
+}
+
+.alchemy-cell.reacting {
+    animation: alchemyReaction 0.5s ease-out;
+}
+
+@keyframes alchemyReaction {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); filter: brightness(2); }
+    100% { transform: scale(1); }
+}

@@ -128,7 +128,45 @@ export function drawTransitionScreen(ctx) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Light realm-specific FX (kept simple here; can be expanded)
-  if (target === 'magmaKingdom') {
+  if (target === 'mysticalLibrary') {
+    // Hypnotic spiral effect for mind games theme
+    ctx.save();
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const spirals = 3;
+
+    for (let s = 0; s < spirals; s++) {
+      ctx.beginPath();
+      const offset = (s / spirals) * Math.PI * 2;
+      const maxRadius = Math.max(canvas.width, canvas.height) * 0.8;
+
+      for (let i = 0; i < 200; i++) {
+        const progress = i / 200;
+        const angle = progress * Math.PI * 6 + t * 2 + offset;
+        const radius = progress * maxRadius * a;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+
+      ctx.strokeStyle = `rgba(210, 170, 255, ${a * 0.3})`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Pulsing center circle
+    ctx.globalAlpha = a * (0.5 + Math.sin(t * 4) * 0.3);
+    ctx.fillStyle = '#cc66ff';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 20 + Math.sin(t * 3) * 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  } else if (target === 'magmaKingdom') {
     for (let i = 0; i < 40; i++) {
       const x = canvas.width * ((i * 41) % 100) / 100 + Math.sin(t * 1.3 + i) * 12;
       const y = canvas.height * (1 - ((t * 0.22 + i * 0.04) % 1));

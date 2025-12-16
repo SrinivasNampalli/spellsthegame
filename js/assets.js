@@ -12,6 +12,7 @@ export const sprites = {
   glitchedVoid: null,
   waterQueenBiome: null,
   fireSpell: null,
+  tsunami: null,
   loaded: false,
 };
 
@@ -105,6 +106,7 @@ export function loadSprites() {
     ['glitchedVoid', 'images/glitchedvoidmysterious.png'],
     ['waterQueenBiome', 'images/waterqueenbiome.png'],
     ['fireSpell', 'images/firespell.png'],
+    ['tsunami', 'images/tsunami.png'],
   ];
 
   for (const [key, src] of loadBg) {

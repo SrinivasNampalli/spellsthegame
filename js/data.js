@@ -36,6 +36,20 @@ export const items = {
     color: '#ff7733',
     desc: 'Left-click to cast. Costs 14 mana',
   },
+  water_spell: {
+    name: 'Water Spell',
+    icon: '💧',
+    maxStack: 1,
+    type: 'spell',
+    manaCost: 12,
+    cooldownMs: 200,
+    damage: 15,
+    projectileSpeed: 480,
+    projectileLifetime: 1400,
+    projectileSize: 16,
+    color: '#00aaff',
+    desc: 'Left-click to cast. Costs 12 mana',
+  },
 
   // Ores/metals
   iron_ore: { name: 'Iron Ore', icon: '🪨', maxStack: 64, desc: 'Raw iron, needs smelting' },

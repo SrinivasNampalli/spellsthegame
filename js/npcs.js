@@ -36,6 +36,8 @@ export class NPC {
   }
 
   draw(ctx) {
+    if (this.hidden) return; // Don't draw if hidden
+
     if (this.spriteKey && sprites.loaded && sprites[this.spriteKey]) {
       drawSprite(ctx, sprites[this.spriteKey], this.x, this.y, this.width, this.height, this.spriteKey);
     } else {
@@ -146,7 +148,7 @@ export function createNPCs() {
   };
   game.npcs.push(elderMage);
 
-  // STORY: Archive Keeper - The Tutorial (Mystical Library)
+  // STORY: Archive Keeper - The Mind Games Challenge (Mystical Library)
   const archiveKeeper = new NPC(
     0,
     0,
@@ -157,39 +159,46 @@ export function createNPCs() {
       'The Elder Sage believes you worthy. But I... I must test this claim myself.',
       '...',
       'CRAFTING: Press C to open your table. Combine items - try 2 Wood into 4 Sticks.',
-      'MAGIC: Take this Fire Spell. Select it (1-9), aim with mouse, press F to cast. Uses 10 mana.',
-      'Practice makes perfect. Or in your case... practice makes survival possible.',
+      'Knowledge is power, and power requires discipline of the MIND.',
       '...',
-      'Now comes the price. Knowledge is never free, child.',
-      'Two Training Droids will test your skills. Defeat them, and the path opens.',
-      'Fail... well. We both know what failure means here.',
-      'Ready yourself. The trial begins... NOW!',
+      'Before you lies the true test. Not of strength... but of mental fortitude.',
+      'Three stations await you. Each will challenge your mind in different ways.',
+      '⚗️ The Alchemy Crucible tests your LOGIC and pattern recognition.',
+      '🔮 The Runic Altar tests your MEMORY under pressure.',
+      '📚 The Memory Tome tests your ability to DECODE ancient secrets.',
+      '...',
+      'Complete all three challenges to prove your mind is sharp enough for what lies ahead.',
+      'The trials... begin NOW!',
     ],
     '#cc66ff',
     null,
-    [{ id: 'fire_spell', count: 1 }],
+    null,
   );
   archiveKeeper.biome = 'mysticalLibrary';
   archiveKeeper.anchor = { x: 0.5, y: 0.3 };
 
   // Override dialogue for post-trial
   archiveKeeper.getNextDialogue = function() {
-    // Post-trial unlock
-    if (game.trialCompleted && !this._postTrialShown) {
+    // Check if all three mind games are completed
+    const alchemyComplete = game.alchemyGame?.complete || false;
+    const runicComplete = game.runicGame?.complete || false;
+    const memoryComplete = game.memoryGame?.complete || false;
+    const allComplete = alchemyComplete && runicComplete && memoryComplete;
+
+    if (allComplete && !this._postTrialShown) {
       this._postTrialShown = true;
       this.dialogueIndex = 0;
       this.dialogues = [
-        'Excellent work! You\'ve proven yourself worthy.',
-        'The library\'s INNER SANCTUM is now unlocked.',
-        'Three magical stations await you:',
-        '⚗️ Alchemy Crucible (left) - Combine materials',
-        '🔮 Runic Altar (center) - Pattern memory game',
-        '📚 Memory Tome (right) - Symbol memorization',
-        'Explore them to gain power and knowledge!',
+        'Remarkable... You have completed all three trials.',
+        'Your mind is sharp, focused, disciplined. The Elder Sage chose well.',
+        'You have proven yourself worthy of the library\'s deepest secrets.',
+        'The path to the Water Queen\'s Realm is now open.',
+        'Go forth, and may your intellect guide you through the trials ahead.',
       ];
-      game.alchemyStationActive = true;
-      game.runicPuzzleActive = true;
-      game.tomeMemoryActive = true;
+      game.trialCompleted = true;
+      game.flags = game.flags || {};
+      game.flags.waterUnlocked = true;
+      saveGameState();
     }
 
     const dialogue = this.dialogues[this.dialogueIndex];
@@ -219,7 +228,7 @@ export function createNPCs() {
     if (!game.flags?.waterUnlocked) {
       this.dialogueIndex = 0;
       this.teleportTo = null;
-      return 'Locked. Defeat the Training Droids to unseal this gate.';
+      return 'Locked. Complete the Archive Keeper\'s mind trials to unseal this gate.';
     }
     this.teleportTo = 'waterQueenRealm';
     return NPC.prototype.getNextDialogue.call(this);
@@ -267,18 +276,19 @@ export function createNPCs() {
     0,
     'Water Queen',
     [
-      'A surface dweller... in MY realm. How bold. Or foolish.',
-      'You carry the scent of magic. The Archive Keeper sent you, did he not?',
-      'That old fool thinks to test you with mere droids. Pathetic.',
+      'Welcome, traveler. You have journeyed far to reach my domain.',
+      'The Archive Keeper speaks highly of you. Impressive.',
+      'The ocean is ancient, powerful... and willing to share its gifts with the worthy.',
+      'Take this Water Spell. May it serve you well in your journey.',
       '...',
-      'I shall show you REAL danger. My minions will tear you apart.',
-      'Survive, and bring me 3 Water Cores from their remains.',
-      'Prove your worth, mortal. Or drown trying.',
-      'The hunt... begins NOW!',
+      'Now then... I sense hesitation in you. Doubt, perhaps?',
+      'You think yourself ready? You think you can stand against TRUE water magic?',
+      'How DARE you enter my realm and question my power!',
+      'I shall drown you in the depths! Feel the fury of the OCEAN!',
     ],
     '#66ccff',
     'waterQueen',
-    null,
+    [{ id: 'water_spell', count: 1 }],
   );
   waterQueen.biome = 'waterQueenRealm';
   waterQueen.anchor = { x: 0.52, y: 0.34 };
@@ -288,7 +298,7 @@ export function createNPCs() {
       { id: 'potion_mana', count: 1 },
       { id: 'mana_crystal', count: 1 },
     ],
-    completeText: 'Water Queen: Accept my blessing. Do not waste it.',
+    completeText: 'Water Queen: *breathing heavily* You... you survived. Perhaps you ARE worthy after all. Take this reward.',
   };
   game.npcs.push(waterQueen);
 
