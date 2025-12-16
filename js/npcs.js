@@ -17,26 +17,24 @@ export class NPC {
     this.dialogues = dialogues;
     this.color = color;
     this.dialogueIndex = 0;
-    this.interactionRange = 80;
+    this.interactionRange = 85;
     this.spriteKey = spriteKey;
-    this.itemGift = itemGift; // string or [{id,count}]
+    this.itemGift = itemGift;
     this.hasGivenItem = false;
 
-    // Layout
     this.biome = 'home';
     this.anchor = null;
     this.anchors = null;
 
-    // Optional quest
-    this.quest = null; // { requires:[{id,count}], rewards:[{id,count}], completeText:string }
+    this.quest = null;
     this.questComplete = false;
+    this.interactionCount = 0;
 
-    // Custom interactive dialogue handler
     this.customDialogueHandler = null;
   }
 
   draw(ctx) {
-    if (this.hidden) return; // Don't draw if hidden
+    if (this.hidden) return;
 
     if (this.spriteKey && sprites.loaded && sprites[this.spriteKey]) {
       drawSprite(ctx, sprites[this.spriteKey], this.x, this.y, this.width, this.height, this.spriteKey);
@@ -45,6 +43,10 @@ export class NPC {
       ctx.fillRect(this.x, this.y, this.width, this.height);
     }
     this.drawNameTag(ctx);
+
+    if (this.quest && !this.questComplete) {
+      this.drawQuestIndicator(ctx);
+    }
   }
 
   drawNameTag(ctx) {
@@ -53,12 +55,29 @@ export class NPC {
     const tagX = this.x - 10;
     const tagY = this.y - 20;
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
     ctx.fillRect(tagX, tagY, tagWidth, tagHeight);
-    ctx.fillStyle = '#ffcc00';
-    ctx.font = '10px monospace';
+
+    const nameColor = this.quest && !this.questComplete ? '#ffdd44' : '#ffcc00';
+    ctx.fillStyle = nameColor;
+    ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(this.name, this.x + this.width / 2, this.y - 8);
+  }
+
+  drawQuestIndicator(ctx) {
+    const t = Date.now() / 1000;
+    const bounce = Math.sin(t * 3) * 3;
+    const x = this.x + this.width / 2;
+    const y = this.y - 35 + bounce;
+
+    ctx.save();
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.shadowBlur = 10;
+    ctx.fillText('!', x, y);
+    ctx.restore();
   }
 
   canInteract(player) {
@@ -69,9 +88,17 @@ export class NPC {
   }
 
   getNextDialogue() {
+    this.interactionCount++;
     const dialogue = this.dialogues[this.dialogueIndex];
     this.dialogueIndex = (this.dialogueIndex + 1) % this.dialogues.length;
     return dialogue;
+  }
+
+  getInteractionHint() {
+    if (this.quest && !this.questComplete) {
+      return 'Press E to accept quest';
+    }
+    return 'Press E to talk';
   }
 }
 

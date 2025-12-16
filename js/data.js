@@ -69,6 +69,11 @@ export const items = {
   lava_core: { name: 'Lava Core', icon: '🌋', maxStack: 32, desc: 'Hot volcanic essence' },
   pearl: { name: 'Pearl', icon: '🦪', maxStack: 64, desc: 'Precious ocean gem' },
   void_shard: { name: 'Void Shard', icon: '🟣', maxStack: 32, desc: 'Fragment from the void' },
+
+  // Quest items
+  water_crown: { name: 'Water Crown', icon: '👑', maxStack: 1, desc: 'Crown of the Water Queen' },
+  ancient_tome: { name: 'Ancient Tome', icon: '📖', maxStack: 1, desc: 'Book of forbidden knowledge' },
+  magma_shard: { name: 'Magma Shard', icon: '🔥', maxStack: 16, desc: 'Crystallized volcanic power' },
 };
 
 export const recipes = [
@@ -95,6 +100,7 @@ export const recipes = [
   // Advanced crafting
   { result: 'mana_crystal', ingredients: { ancient_page: 2, air_feather: 1 }, count: 1, name: 'Rune Crystal' },
   { result: 'fire_essence', ingredients: { lava_core: 1 }, count: 2, name: 'Core-to-Essence' },
+  { result: 'fire_essence', ingredients: { magma_shard: 2 }, count: 3, name: 'Shard Conversion' },
 ];
 
 export const biomes = {
@@ -102,7 +108,7 @@ export const biomes = {
     name: 'Village Hub',
     background: 'homeBackground',
     music: null,
-    transitionMessages: ['Returning home...', 'Welcome back!'],
+    transitionMessages: ['Returning home...', 'The familiar warmth embraces you...', 'Welcome back!'],
   },
   waterQueenRealm: {
     name: 'Water Queen Realm',
@@ -111,6 +117,7 @@ export const biomes = {
     transitionMessages: [
       'Water begins to swirl around you...',
       'The tides respond to her call...',
+      'Pressure builds as you descend...',
       'You arrive at the WATER QUEEN REALM!',
       'The ocean depths welcome you...',
     ],
@@ -122,8 +129,9 @@ export const biomes = {
     transitionMessages: [
       'The blacksmith leads you through a portal...',
       'Heat radiates from the ground...',
+      'Molten rivers flow beneath your feet...',
       'You arrive at the MAGMA KINGDOM!',
-      'The forge awaits!',
+      'The eternal forge awaits!',
     ],
   },
   mysticalLibrary: {
@@ -133,8 +141,9 @@ export const biomes = {
     transitionMessages: [
       'The Elder Mage opens a mystical gateway...',
       'Ancient energies surround you...',
+      'Reality bends and shifts...',
       'You step into the MYSTICAL LIBRARY!',
-      'Knowledge fills the air...',
+      'Infinite knowledge fills the air...',
     ],
   },
   glitchedVoid: {

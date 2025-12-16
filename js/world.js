@@ -119,31 +119,36 @@ export function drawTransitionScreen(ctx) {
 
   const overlayByTarget = {
     home: [0, 0, 0],
-    waterQueenRealm: [0, 25, 50],
-    magmaKingdom: [40, 5, 0],
-    mysticalLibrary: [15, 0, 35],
-    glitchedVoid: [0, 0, 0],
+    waterQueenRealm: [0, 30, 55],
+    magmaKingdom: [45, 8, 0],
+    mysticalLibrary: [20, 5, 40],
+    glitchedVoid: [5, 0, 5],
   };
+
   const [or, og, ob] = overlayByTarget[target] || [0, 0, 0];
-  ctx.fillStyle = `rgba(${or}, ${og}, ${ob}, ${a})`;
+  const gradient = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, 0,
+    canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.7
+  );
+  gradient.addColorStop(0, `rgba(${or}, ${og}, ${ob}, ${a * 0.6})`);
+  gradient.addColorStop(1, `rgba(${or}, ${og}, ${ob}, ${a})`);
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Light realm-specific FX (kept simple here; can be expanded)
   if (target === 'mysticalLibrary') {
-    // Hypnotic spiral effect for mind games theme
     ctx.save();
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
-    const spirals = 3;
+    const spirals = 4;
 
     for (let s = 0; s < spirals; s++) {
       ctx.beginPath();
       const offset = (s / spirals) * Math.PI * 2;
-      const maxRadius = Math.max(canvas.width, canvas.height) * 0.8;
+      const maxRadius = Math.max(canvas.width, canvas.height) * 0.85;
 
-      for (let i = 0; i < 200; i++) {
-        const progress = i / 200;
-        const angle = progress * Math.PI * 6 + t * 2 + offset;
+      for (let i = 0; i < 220; i++) {
+        const progress = i / 220;
+        const angle = progress * Math.PI * 7 + t * 2.2 + offset;
         const radius = progress * maxRadius * a;
         const x = cx + Math.cos(angle) * radius;
         const y = cy + Math.sin(angle) * radius;
@@ -155,8 +160,9 @@ export function drawTransitionScreen(ctx) {
         }
       }
 
-      ctx.strokeStyle = `rgba(210, 170, 255, ${a * 0.3})`;
-      ctx.lineWidth = 3;
+      const opacity = a * (0.35 - s * 0.05);
+      ctx.strokeStyle = `rgba(210, 170, 255, ${opacity})`;
+      ctx.lineWidth = 3.5;
       ctx.stroke();
     }
 
@@ -168,31 +174,48 @@ export function drawTransitionScreen(ctx) {
     ctx.fill();
     ctx.restore();
   } else if (target === 'magmaKingdom') {
-    for (let i = 0; i < 40; i++) {
-      const x = canvas.width * ((i * 41) % 100) / 100 + Math.sin(t * 1.3 + i) * 12;
-      const y = canvas.height * (1 - ((t * 0.22 + i * 0.04) % 1));
-      const r = 2 + ((i * 19) % 5);
+    for (let i = 0; i < 50; i++) {
+      const x = canvas.width * ((i * 41) % 100) / 100 + Math.sin(t * 1.5 + i) * 15;
+      const y = canvas.height * (1 - ((t * 0.25 + i * 0.045) % 1));
+      const r = 2.5 + ((i * 19) % 6);
       ctx.save();
-      ctx.globalAlpha = a * 0.45;
-      ctx.fillStyle = (i % 2) === 0 ? '#ffcc66' : '#ff5533';
+      ctx.globalAlpha = a * (0.4 + Math.sin(t * 3 + i) * 0.15);
+      const colorChoices = ['#ffcc66', '#ff5533', '#ff8844', '#ffaa22'];
+      ctx.fillStyle = colorChoices[i % colorChoices.length];
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
   } else if (target === 'waterQueenRealm') {
-    for (let i = 0; i < 28; i++) {
-      const phase = i * 0.77;
-      const x = canvas.width * ((i * 97) % 100) / 100 + Math.sin(t * 1.5 + phase) * 18;
-      const y = canvas.height * (1 - ((t * 0.12 + i * 0.03) % 1));
-      const r = 2 + ((i * 13) % 4);
+    for (let i = 0; i < 35; i++) {
+      const phase = i * 0.8;
+      const x = canvas.width * ((i * 97) % 100) / 100 + Math.sin(t * 1.6 + phase) * 20;
+      const y = canvas.height * (1 - ((t * 0.14 + i * 0.032) % 1));
+      const r = 2.5 + ((i * 13) % 5);
       ctx.save();
-      ctx.globalAlpha = a * 0.35;
-      ctx.strokeStyle = 'rgba(120, 220, 255, 1)';
-      ctx.lineWidth = 2;
+      ctx.globalAlpha = a * (0.3 + Math.sin(t * 2 + i) * 0.1);
+      const brightness = 120 + Math.sin(t * 4 + i) * 30;
+      ctx.strokeStyle = `rgba(${brightness}, 220, 255, 1)`;
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = `rgba(${brightness}, 220, 255, 0.6)`;
+      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+    }
+  } else if (target === 'glitchedVoid') {
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const size = Math.random() * 40 + 10;
+      ctx.save();
+      ctx.globalAlpha = a * Math.random() * 0.3;
+      ctx.fillStyle = `rgb(${Math.random() * 100}, ${Math.random() * 50}, ${Math.random() * 100})`;
+      ctx.fillRect(x, y, size, size);
       ctx.restore();
     }
   }

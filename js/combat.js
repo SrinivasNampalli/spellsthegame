@@ -118,6 +118,7 @@ export class Enemy {
     this.maxHealth = 60;
     this.health = this.maxHealth;
     this.speed = 95;
+    this.baseSpeed = 95;
 
     this.vx = 0;
     this.vy = 0;
@@ -128,6 +129,7 @@ export class Enemy {
     this.attackTimerMs = 0;
 
     this.isDead = false;
+    this.enragedThreshold = 0.3;
   }
 
   takeDamage(amount) {
@@ -139,10 +141,19 @@ export class Enemy {
   update(deltaTime) {
     if (this.isDead) return;
 
+    const healthRatio = this.health / this.maxHealth;
+    const isEnraged = healthRatio <= this.enragedThreshold;
+
+    if (isEnraged) {
+      this.speed = this.baseSpeed * 1.4;
+    } else {
+      this.speed = this.baseSpeed;
+    }
+
     this.wanderTimerMs += deltaTime;
     if (this.wanderTimerMs >= this.wanderTargetMs) {
       this.wanderTimerMs = 0;
-      this.wanderTargetMs = 800 + Math.random() * 900;
+      this.wanderTargetMs = isEnraged ? 600 + Math.random() * 600 : 800 + Math.random() * 900;
       const angle = Math.random() * Math.PI * 2;
       this.vx = Math.cos(angle) * this.speed;
       this.vy = Math.sin(angle) * this.speed;
@@ -156,9 +167,9 @@ export class Enemy {
     this.x = clamp(this.x, margin, canvas.width - this.width - margin);
     this.y = clamp(this.y, margin, canvas.height - this.height - margin);
 
-    // Shoot arcane bolts at player
     this.attackTimerMs += deltaTime;
-    if (this.attackTimerMs >= this.attackCooldownMs) {
+    const attackCooldown = isEnraged ? this.attackCooldownMs * 0.7 : this.attackCooldownMs;
+    if (this.attackTimerMs >= attackCooldown) {
       this.attackTimerMs = 0;
       this.attackCooldownMs = 950 + Math.random() * 650;
       this.shootAtPlayer();
@@ -206,19 +217,24 @@ export class Enemy {
   draw(ctx) {
     if (this.isDead) return;
 
+    const healthRatio = this.health / this.maxHealth;
+    const isEnraged = healthRatio <= this.enragedThreshold;
+
     ctx.save();
-    ctx.shadowColor = 'rgba(170, 110, 255, 0.7)';
-    ctx.shadowBlur = 18;
-    ctx.fillStyle = 'rgba(140, 90, 255, 0.9)';
+    const baseColor = isEnraged ? 'rgba(200, 60, 255, 0.9)' : 'rgba(140, 90, 255, 0.9)';
+    const shadowColor = isEnraged ? 'rgba(200, 60, 255, 0.85)' : 'rgba(170, 110, 255, 0.7)';
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = isEnraged ? 22 : 18;
+    ctx.fillStyle = baseColor;
     ctx.beginPath();
     ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width * 0.42, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     ctx.save();
-    ctx.fillStyle = '#0b0020';
+    ctx.fillStyle = isEnraged ? '#200010' : '#0b0020';
     ctx.beginPath();
-    ctx.arc(this.x + this.width / 2 + 6, this.y + this.height / 2 - 2, 4, 0, Math.PI * 2);
+    ctx.arc(this.x + this.width / 2 + 6, this.y + this.height / 2 - 2, isEnraged ? 5 : 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
