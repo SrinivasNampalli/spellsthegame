@@ -13,8 +13,8 @@ export function setOnBiomeChanged(fn) {
 export function resizeCanvas() {
   const maxWidth = Math.min(1400, window.innerWidth * 0.9);
   const maxHeight = Math.min(900, window.innerHeight * 0.9);
-
   const aspectRatio = 16 / 10;
+
   if (maxWidth / maxHeight > aspectRatio) {
     canvas.width = maxHeight * aspectRatio;
     canvas.height = maxHeight;
@@ -38,17 +38,19 @@ export function bindResize(onResizeLayout) {
 export function updateBackButtonVisibility() {
   const el = dom.backButtonEl;
   if (!el) return;
+
   if (game.currentBiome === 'home') {
     el.classList.add('hidden');
     return;
   }
+
   el.classList.remove('hidden');
   el.textContent = game.currentBiome === 'glitchedVoid' ? 'Back (Locked)' : 'Back';
 }
 
 export function handleBackButton() {
-  if (game.transitioning) return;
-  if (game.currentBiome === 'home') return;
+  if (game.transitioning || game.currentBiome === 'home') return;
+
   if (game.currentBiome === 'glitchedVoid') {
     showToast('Locked');
     return;
@@ -78,10 +80,7 @@ export function updateTransition(deltaTime) {
   if (!game.transitioning) return false;
 
   game.transitionTimer += deltaTime;
-
-  if (game.transitionAlpha < 1) {
-    game.transitionAlpha += deltaTime / 500;
-  }
+  if (game.transitionAlpha < 1) game.transitionAlpha += deltaTime / 500;
 
   if (game.transitionTimer > (game.transitionMessageIndex + 1) * 800) {
     game.transitionMessageIndex++;
@@ -98,7 +97,9 @@ function completeTransition() {
   game.transitioning = false;
   game.transitionAlpha = 0;
   updateBackButtonVisibility();
-  if (typeof onBiomeChanged === 'function') onBiomeChanged(game.currentBiome);
+  if (typeof onBiomeChanged === 'function') {
+    onBiomeChanged(game.currentBiome);
+  }
 }
 
 export function drawBackground(ctx) {

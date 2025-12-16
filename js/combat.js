@@ -28,7 +28,6 @@ export function updateScreenShake(deltaTime) {
     return;
   }
 
-  // Compute once per frame so aiming/FX can share the same offset.
   game.shakeX = (Math.random() - 0.5) * game.shakeStrength;
   game.shakeY = (Math.random() - 0.5) * game.shakeStrength;
 }
@@ -43,8 +42,10 @@ function dropLoot(enemy) {
 
   for (const drop of loot) {
     if (!drop?.id) continue;
+
     const def = items[drop.id];
     if (!def) continue;
+
     const chance = typeof drop.chance === 'number' ? drop.chance : 1;
     if (Math.random() > chance) continue;
 
@@ -72,14 +73,17 @@ export function spawnDamageNumber(x, y, text, color = '#fff') {
 }
 
 export function updateDamageNumbers(deltaTime) {
+  const dt = deltaTime / 1000;
+
   for (let i = game.damageNumbers.length - 1; i >= 0; i--) {
     const n = game.damageNumbers[i];
     n.lifeMs -= deltaTime;
+
     if (n.lifeMs <= 0) {
       game.damageNumbers.splice(i, 1);
       continue;
     }
-    const dt = deltaTime / 1000;
+
     n.y += n.vy * dt;
     n.vy -= 20 * dt;
   }
