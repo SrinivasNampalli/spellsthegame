@@ -478,14 +478,16 @@ body {
     cursor: not-allowed;
 }
 
-/* Pixel Art Theme for Mini-games */
+/* Enhanced Pixel/Neon Theme for Mini-games */
 .pixel-panel {
-    background: #1a1a2e;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
     border: 4px solid #0f0f1e;
     box-shadow:
         inset 0 0 0 2px #2a2a3e,
+        inset 0 0 20px rgba(0, 255, 255, 0.05),
         0 4px 0 #0a0a0f,
-        0 8px 20px rgba(0, 0, 0, 0.5);
+        0 8px 20px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(0, 255, 255, 0.1);
     padding: 20px;
     font-family: 'Courier New', monospace;
     text-align: center;
@@ -494,15 +496,18 @@ body {
 }
 
 .pixel-title {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
-    color: #ffcc00;
+    color: #00ffff;
     text-shadow:
-        2px 0 0 #aa8800,
-        0 2px 0 #aa8800,
-        2px 2px 0 #aa8800;
+        2px 0 0 #0088aa,
+        0 2px 0 #0088aa,
+        2px 2px 0 #0088aa,
+        0 0 10px rgba(0, 255, 255, 0.5),
+        0 0 20px rgba(0, 255, 255, 0.3);
     margin-bottom: 15px;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }
 
 .pixel-header {
@@ -510,71 +515,86 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    padding: 10px;
-    background: #0f0f1e;
+    padding: 12px;
+    background: linear-gradient(90deg, #0f0f1e 0%, #1a1a2e 50%, #0f0f1e 100%);
     border: 2px solid #2a2a3e;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
 }
 
 .pixel-badge {
     background: #2a2a3e;
-    border: 2px solid #ffcc00;
-    padding: 4px 12px;
+    border: 2px solid #00ffaa;
+    padding: 6px 14px;
     font-size: 11px;
-    color: #ffcc00;
+    color: #00ffaa;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    text-shadow: 0 0 8px rgba(0, 255, 170, 0.6);
+    box-shadow: inset 0 0 10px rgba(0, 255, 170, 0.1);
 }
 
 .pixel-text {
     font-size: 13px;
     color: #e0e0e0;
-    line-height: 1.6;
+    line-height: 1.8;
     font-family: 'Courier New', monospace;
+    text-shadow: 0 0 5px rgba(224, 224, 224, 0.3);
 }
 
 .pixel-button {
     font-family: 'Courier New', monospace;
     font-weight: bold;
-    border: 2px solid #444;
-    background: #2a2a3e;
-    color: #fff;
-    transition: all 0.1s;
+    border: 2px solid #00aaff;
+    background: linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%);
+    color: #00ffff;
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    transition: all 0.15s;
     cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
 }
 
 .pixel-button:hover {
-    background: #3a3a4e;
-    border-color: #ffcc00;
-    transform: translateY(-1px);
+    background: linear-gradient(180deg, #3a3a5e 0%, #2a2a4e 100%);
+    border-color: #00ffff;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    color: #ffffff;
 }
 
 .pixel-button:active {
     transform: translateY(1px);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 10px rgba(0, 170, 255, 0.3);
 }
 
 .pixel-button.selected {
-    background: #ffcc00;
-    color: #1a1a2e;
-    border-color: #ffdd44;
+    background: linear-gradient(180deg, #00ffaa 0%, #00cc88 100%);
+    color: #0a0a0f;
+    border-color: #00ffcc;
+    text-shadow: none;
+    box-shadow: 0 0 20px rgba(0, 255, 170, 0.5);
 }
 
 .alchemy-cell {
     transition: all 0.2s;
+    box-shadow: 0 0 8px rgba(0, 170, 255, 0.15);
 }
 
 .alchemy-cell:hover:not(:disabled) {
     background: #3a3a5e !important;
-    border-color: #88aaff !important;
-    transform: scale(1.05);
+    border-color: #00ffff !important;
+    transform: scale(1.08);
+    box-shadow: 0 0 18px rgba(0, 255, 255, 0.4);
+    filter: brightness(1.2);
 }
 
 .alchemy-cell.reacting {
-    animation: alchemyReaction 0.5s ease-out;
+    animation: alchemyReaction 0.6s ease-out;
 }
 
 @keyframes alchemyReaction {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.3); filter: brightness(2); }
-    100% { transform: scale(1); }
+    0% { transform: scale(1); filter: brightness(1); }
+    25% { transform: scale(1.15) rotate(5deg); filter: brightness(1.5); }
+    50% { transform: scale(1.35) rotate(-5deg); filter: brightness(2); box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); }
+    75% { transform: scale(1.15) rotate(3deg); filter: brightness(1.5); }
+    100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
 }

@@ -18,25 +18,28 @@ import { castSelectedSpellAt } from './spells.js';
 import { spawnTrainingDroids, spawnWaterMinions, spawnWaterQueen } from './combat.js';
 import { handleRunicInput, handleMemoryInput, hideMinigame } from './libraryActivities.js';
 
+// Sync equipped weapon based on hotbar selection
 export function updateEquippedWeapon() {
   const selectedItem = game.player.inventory[game.player.selectedSlot];
   if (selectedItem && selectedItem.type === 'weapon') game.equippedWeapon = selectedItem;
   else game.equippedWeapon = null;
 }
 
+// Activate currently selected hotbar item
 export function useSelectedItem() {
   if (game.dialogueActive || game.transitioning) return;
+
   const slot = game.player.selectedSlot;
   const item = game.player.inventory[slot];
   if (!item) return;
 
-  // Handle spell casting
+  // Spell activation with screen shake compensation
   if (item.type === 'spell') {
     castSelectedSpellAt(game.mouseX - (game.shakeX || 0), game.mouseY - (game.shakeY || 0));
     return;
   }
 
-  // Handle consumables
+  // Consumable item usage
   if (item.type !== 'consumable') return;
 
   if (item.heal) game.player.heal(item.heal);
@@ -49,10 +52,13 @@ export function useSelectedItem() {
   saveGameState();
 }
 
+// Drop currently selected item to ground
 export function dropItem() {
   const slot = game.player.selectedSlot;
   const item = game.player.inventory[slot];
   if (!item) return;
+
+  // Spawn item near player feet
   game.droppedItems.push({
     x: game.player.x + game.player.width / 2 - 10,
     y: game.player.y + game.player.height + 5,
@@ -60,16 +66,22 @@ export function dropItem() {
     height: 20,
     item: { ...item },
   });
+
   game.player.inventory[slot] = null;
   saveGameState();
 }
 
+// Respawn player after death
 export function tryRespawn() {
   if (game.player.health > 0) return;
+
+  // Fully restore player stats
   game.player.health = game.player.maxHealth;
   game.player.mana = game.player.maxMana;
   game.player.x = canvas.width / 2;
   game.player.y = canvas.height / 2;
+
+  // Clear combat state
   game.projectiles = [];
   game.damageNumbers = [];
   game.shakeMs = 0;
@@ -78,9 +90,8 @@ export function tryRespawn() {
   // Reset Water Queen boss if active
   if (game.waterQueenBossActive) {
     game.waterQueenBossActive = false;
-    // Remove boss from enemies
     game.enemies = game.enemies.filter(e => e.constructor.name !== 'WaterQueen');
-    // Unhide Water Queen NPC and reset dialogue
+
     const waterQueenNPC = game.npcs.find(n => n.name === 'Water Queen');
     if (waterQueenNPC) {
       waterQueenNPC.hidden = false;

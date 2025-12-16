@@ -69,19 +69,19 @@ export class Player {
     update(deltaTime) {
         const dt = deltaTime / 1000;
 
-        // Movement update
-          this.x += this.velocityX * dt;
+        // Apply movement with smooth interpolation
+        this.x += this.velocityX * dt;
         this.y += this.velocityY * dt;
 
-        // Animation timer
+        // Update animation state
         this.animTime += dt * (this.isMoving ? 1 : 0.5);
 
-        // mana regen
+        // Passive mana regeneration
         if (this.mana < this.maxMana) {
             this.mana = Math.min(this.maxMana, this.mana + this.manaRegen * dt);
         }
 
-        // invuln timer
+        // Damage immunity frames
         if (this.isInvulnerable) {
             this.invulnerabilityTimer += deltaTime;
             if (this.invulnerabilityTimer >= this.invulnerabilityDuration) {
@@ -90,10 +90,10 @@ export class Player {
             }
         }
 
-        // spell cooldowns
+        // Active spell cooldown tracking
         for (let i = 0; i < this.spellCooldowns.length; i++) {
             if (this.spellCooldowns[i] > 0) {
-                this.spellCooldowns[i] -= deltaTime;
+                this.spellCooldowns[i] = Math.max(0, this.spellCooldowns[i] - deltaTime);
             }
         }
     }
@@ -132,28 +132,28 @@ export class Player {
         return null;
     }
 
-    // Take damage
+    // Process incoming damage with defense calculation
     takeDamage(amount) {
         if (this.isInvulnerable) return false;
 
-        const actualDamage = Math.max(1, amount - this.defense);
-        this.health -= actualDamage;
+        const actualDamage = Math.max(1, Math.floor(amount - this.defense));
+        this.health = Math.max(0, this.health - actualDamage);
 
         if (this.health <= 0) {
-            this.health = 0;
             this.onDeath();
             return true;
         }
 
+        // Trigger immunity frames
         this.isInvulnerable = true;
         this.invulnerabilityTimer = 0;
         return false;
     }
 
-    // Heal player
+    // Restore health with overflow protection
     heal(amount) {
         const oldHealth = this.health;
-        this.health = Math.min(this.maxHealth, this.health + amount);
+        this.health = Math.min(this.maxHealth, this.health + Math.floor(amount));
         return this.health - oldHealth;
     }
 

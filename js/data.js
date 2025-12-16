@@ -77,27 +77,27 @@ export const items = {
 };
 
 export const recipes = [
-  // Basic crafting
+  // Foundational recipes - survival essentials
   { result: 'plank', ingredients: { wood: 1 }, count: 4, name: 'Planks' },
   { result: 'stick', ingredients: { wood: 2 }, count: 4, name: 'Sticks' },
   { result: 'torch', ingredients: { coal: 1, stick: 1 }, count: 4, name: 'Torches' },
   { result: 'rope', ingredients: { air_feather: 3 }, count: 2, name: 'Rope' },
   { result: 'campfire', ingredients: { wood: 3, coal: 1 }, count: 1, name: 'Campfire' },
 
-  // Weapons and tools
+  // Combat equipment - progression path
   { result: 'iron_ingot', ingredients: { iron_ore: 1, fire_essence: 1 }, count: 1, name: 'Iron Ingot' },
   { result: 'wooden_sword', ingredients: { wood: 2, stick: 1 }, count: 1, name: 'Wooden Sword' },
   { result: 'iron_sword', ingredients: { iron_ingot: 2, stick: 1 }, count: 1, name: 'Iron Sword' },
   { result: 'enchanted_iron_sword', ingredients: { iron_sword: 1, fire_essence: 2, mana_crystal: 1 }, count: 1, name: 'Enchanted Iron Sword' },
   { result: 'wand_basic', ingredients: { stick: 1, mana_crystal: 1 }, count: 1, name: 'Basic Wand' },
 
-  // Potions
+  // Restoration items - health and mana recovery
   { result: 'potion_health', ingredients: { water_drop: 1, fire_essence: 1 }, count: 1, name: 'Health Potion' },
   { result: 'potion_mana', ingredients: { water_drop: 2, mana_crystal: 1 }, count: 1, name: 'Mana Potion' },
   { result: 'potion_health', ingredients: { berry: 2, water_drop: 1 }, count: 1, name: 'Berry Tonic' },
   { result: 'potion_mana', ingredients: { pearl: 1, water_drop: 1 }, count: 1, name: 'Pearl Mana Potion' },
 
-  // Advanced crafting
+  // Master crafting - endgame resource conversion
   { result: 'mana_crystal', ingredients: { ancient_page: 2, air_feather: 1 }, count: 1, name: 'Rune Crystal' },
   { result: 'fire_essence', ingredients: { lava_core: 1 }, count: 2, name: 'Core-to-Essence' },
   { result: 'fire_essence', ingredients: { magma_shard: 2 }, count: 3, name: 'Shard Conversion' },

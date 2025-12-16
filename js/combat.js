@@ -115,19 +115,23 @@ export class Enemy {
     this.biome = biome;
     this.anchor = null;
 
+    // Base combat stats
     this.maxHealth = 60;
     this.health = this.maxHealth;
     this.speed = 95;
     this.baseSpeed = 95;
 
+    // Movement behavior
     this.vx = 0;
     this.vy = 0;
     this.wanderTimerMs = 0;
     this.wanderTargetMs = 900 + Math.random() * 900;
 
+    // Attack patterns
     this.attackCooldownMs = 700 + Math.random() * 500;
     this.attackTimerMs = 0;
 
+    // State tracking
     this.isDead = false;
     this.enragedThreshold = 0.3;
   }
@@ -141,6 +145,7 @@ export class Enemy {
   update(deltaTime) {
     if (this.isDead) return;
 
+    // Dynamic difficulty - enemies become more aggressive when wounded
     const healthRatio = this.health / this.maxHealth;
     const isEnraged = healthRatio <= this.enragedThreshold;
 
@@ -150,6 +155,7 @@ export class Enemy {
       this.speed = this.baseSpeed;
     }
 
+    // Erratic movement patterns
     this.wanderTimerMs += deltaTime;
     if (this.wanderTimerMs >= this.wanderTargetMs) {
       this.wanderTimerMs = 0;
@@ -163,10 +169,12 @@ export class Enemy {
     this.x += this.vx * dt;
     this.y += this.vy * dt;
 
+    // Keep within arena bounds
     const margin = 25;
     this.x = clamp(this.x, margin, canvas.width - this.width - margin);
     this.y = clamp(this.y, margin, canvas.height - this.height - margin);
 
+    // Accelerated attack rate when enraged
     this.attackTimerMs += deltaTime;
     const attackCooldown = isEnraged ? this.attackCooldownMs * 0.7 : this.attackCooldownMs;
     if (this.attackTimerMs >= attackCooldown) {
@@ -220,6 +228,7 @@ export class Enemy {
     const healthRatio = this.health / this.maxHealth;
     const isEnraged = healthRatio <= this.enragedThreshold;
 
+    // Adaptive visual feedback based on health state
     ctx.save();
     const baseColor = isEnraged ? 'rgba(200, 60, 255, 0.9)' : 'rgba(140, 90, 255, 0.9)';
     const shadowColor = isEnraged ? 'rgba(200, 60, 255, 0.85)' : 'rgba(170, 110, 255, 0.7)';
@@ -231,6 +240,7 @@ export class Enemy {
     ctx.fill();
     ctx.restore();
 
+    // Enemy eye/core
     ctx.save();
     ctx.fillStyle = isEnraged ? '#200010' : '#0b0020';
     ctx.beginPath();
@@ -238,7 +248,7 @@ export class Enemy {
     ctx.fill();
     ctx.restore();
 
-    // Health bar
+    // Status indicator bar
     const barW = 52;
     const barH = 6;
     const bx = this.x + this.width / 2 - barW / 2;

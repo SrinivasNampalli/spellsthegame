@@ -58,6 +58,7 @@ import { drawCraftingUI, drawGuideUI } from './crafting.js';
 import { addScreenShake, spawnDamageNumber } from './combat.js';
 import { spawnParticle } from './particles.js';
 
+// Display temporary notification toast
 export function showToast(text, ms = 1400) {
   if (!dom.toastEl) return;
   dom.toastEl.textContent = text;
@@ -66,12 +67,13 @@ export function showToast(text, ms = 1400) {
   showToast._t = setTimeout(() => dom.toastEl.classList.add('hidden'), ms);
 }
 
+// Initiate NPC dialogue with typing effect
 export function showDialogue(npcName, text, choices = null) {
   game.dialogueActive = true;
   dom.dialogueBox?.classList.remove('hidden');
   if (dom.npcNameEl) dom.npcNameEl.textContent = npcName;
 
-  // Start typing animation
+  // Initialize typewriter animation
   game.dialogueFullText = text;
   game.dialogueVisibleText = '';
   game.dialogueTypingIndex = 0;
@@ -133,16 +135,17 @@ function handleDialogueChoice(choice) {
   }
 }
 
+// Close dialogue interface and clear state
 export function hideDialogue() {
   game.dialogueActive = false;
   game.currentNPC = null;
   dom.dialogueBox?.classList.add('hidden');
 }
 
+// Progressive text reveal animation
 export function updateDialogueTyping(deltaTime) {
   if (!game.dialogueActive || game.dialogueTypingComplete) return;
 
-  // Update typing timer
   game.dialogueTypingTimer += deltaTime;
 
   // Calculate how many characters should be visible

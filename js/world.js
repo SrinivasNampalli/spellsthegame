@@ -166,7 +166,7 @@ export function drawTransitionScreen(ctx) {
       ctx.stroke();
     }
 
-    // Pulsing center circle
+    // Hypnotic core - draws attention inward
     ctx.globalAlpha = a * (0.5 + Math.sin(t * 4) * 0.3);
     ctx.fillStyle = '#cc66ff';
     ctx.beginPath();
@@ -174,6 +174,7 @@ export function drawTransitionScreen(ctx) {
     ctx.fill();
     ctx.restore();
   } else if (target === 'magmaKingdom') {
+    // Rising embers from the volcanic depths
     for (let i = 0; i < 50; i++) {
       const x = canvas.width * ((i * 41) % 100) / 100 + Math.sin(t * 1.5 + i) * 15;
       const y = canvas.height * (1 - ((t * 0.25 + i * 0.045) % 1));
@@ -190,6 +191,7 @@ export function drawTransitionScreen(ctx) {
       ctx.restore();
     }
   } else if (target === 'waterQueenRealm') {
+    // Ascending bubbles with oceanic shimmer
     for (let i = 0; i < 35; i++) {
       const phase = i * 0.8;
       const x = canvas.width * ((i * 97) % 100) / 100 + Math.sin(t * 1.6 + phase) * 20;
@@ -208,6 +210,7 @@ export function drawTransitionScreen(ctx) {
       ctx.restore();
     }
   } else if (target === 'glitchedVoid') {
+    // Reality corruption artifacts
     for (let i = 0; i < 20; i++) {
       const x = Math.random() * canvas.width;
       const y = Math.random() * canvas.height;
@@ -220,13 +223,14 @@ export function drawTransitionScreen(ctx) {
     }
   }
 
-  // Messages
+  // Transition narrative text
   const isGlitched = target === 'glitchedVoid';
   for (let i = 0; i <= game.transitionMessageIndex && i < game.transitionMessages.length; i++) {
     const message = game.transitionMessages[i];
     const yOffset = canvas.height / 2 - 100 + i * 60;
 
     if (isGlitched) {
+      // Corrupted reality text rendering
       ctx.fillStyle = `rgba(${Math.random() * 255}, ${Math.random() * 100}, ${Math.random() * 100}, ${a})`;
       ctx.font = `${24 + Math.random() * 8}px monospace`;
       const glitchX = canvas.width / 2 + (Math.random() - 0.5) * 20;
