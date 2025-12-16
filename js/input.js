@@ -16,7 +16,7 @@ import {
 } from './crafting.js';
 import { castSelectedSpellAt } from './spells.js';
 import { spawnTrainingDroids, spawnWaterMinions } from './combat.js';
-import { handleRunicInput, handleMemoryInput } from './libraryActivities.js';
+import { handleRunicInput, handleMemoryInput, hideMinigame } from './libraryActivities.js';
 
 export function updateEquippedWeapon() {
   const selectedItem = game.player.inventory[game.player.selectedSlot];
@@ -123,9 +123,10 @@ export function handleInteraction() {
 
     // Teleport if dialogue looped back
     if (game.currentNPC.dialogueIndex === 0) {
-      // Archive Keeper spawns Training Droids when dialogue completes
-      if (game.currentNPC.name === 'Archive Keeper' && !game.trialActive) {
+      // Archive Keeper spawns Training Droids when dialogue completes (only once)
+      if (game.currentNPC.name === 'Archive Keeper' && !game.trialActive && !game.trialCompleted && !game.currentNPC._droidsSpawned) {
         spawnTrainingDroids();
+        game.currentNPC._droidsSpawned = true;
       }
 
       // Water Queen spawns minions on first interaction complete
@@ -152,6 +153,12 @@ export function handleInteraction() {
     // Use custom dialogue handler if available
     if (game.currentNPC.customDialogueHandler) {
       game.currentNPC.customDialogueHandler();
+      return;
+    }
+
+    // Library stations use interact() method instead of dialogue
+    if (game.currentNPC.interact && typeof game.currentNPC.interact === 'function') {
+      game.currentNPC.interact();
       return;
     }
 
@@ -236,6 +243,9 @@ function handleKeyDown(e) {
   if (key === 'h' && !keys.h) returnHome();
   if (key === 'f' && !keys.f) useSelectedItem();
   if (key === 'r' && !keys.r) tryRespawn();
+  if (key === 'm' && !keys.m) {
+    if (game.minigameActive) hideMinigame();
+  }
 
   if (key >= '1' && key <= '9') {
     const slotNum = parseInt(key, 10) - 1;

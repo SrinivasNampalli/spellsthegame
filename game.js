@@ -1,6 +1,6 @@
 // game.js (entrypoint) - keeps the core loop and delegates to modules in /js
 
-import { canvas, ctx, game, keys } from './js/context.js';
+import { canvas, ctx, game, keys, dom } from './js/context.js';
 import { clamp, lerp } from './js/utils.js';
 import { Player } from './player.js';
 import { loadSprites, sprites, drawSprite, enforcePixelArt } from './js/assets.js';
@@ -29,7 +29,7 @@ import {
 import { drawAimAssist } from './js/spells.js';
 import { bindInput, updateEquippedWeapon } from './js/input.js';
 import { drawUI, bindLevelUpUI, updateDialogueTyping } from './js/ui.js';
-import { createLibraryStations } from './js/libraryActivities.js';
+import { createLibraryStations, hideMinigame } from './js/libraryActivities.js';
 import {
   resizeCanvas,
   bindResize,
@@ -87,6 +87,11 @@ function init() {
 
   // Input
   bindInput();
+
+  // Mini-game close button
+  if (dom.minigameClose) {
+    dom.minigameClose.addEventListener('click', hideMinigame);
+  }
 
   // Autosave on refresh/navigation
   window.addEventListener('beforeunload', () => saveGameState());

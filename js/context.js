@@ -12,6 +12,11 @@ export const dom = {
   dialogueContinueEl: document.getElementById('dialogue-continue'),
   dialogueBlipAudio: document.getElementById('dialogue-blip'),
   dialogueChoiceAudio: document.getElementById('dialogue-choice'),
+  minigameOverlay: document.getElementById('minigame-overlay'),
+  minigameTitle: document.getElementById('minigame-title'),
+  minigameContent: document.getElementById('minigame-content'),
+  minigameControls: document.getElementById('minigame-controls'),
+  minigameClose: document.getElementById('minigame-close'),
 };
 
 export const game = {
@@ -101,6 +106,7 @@ export const game = {
   tomeMemoryActive: false,
 
   // Mini-game states
+  minigameActive: false,
   runicPuzzle: null,
   runicPuzzleInputMode: false,
   memoryGame: null,
@@ -138,6 +144,7 @@ export const keys = {
   g: false,
   q: false,
   h: false,
+  m: false,
   1: false,
   2: false,
   3: false,
